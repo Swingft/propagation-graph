@@ -1,0 +1,1444 @@
+{
+  "type" : "Syntax",
+  "children" : [
+    {
+      "children" : [
+        {
+          "children" : [
+            {
+              "type" : "Syntax",
+              "text" : "import Foundation",
+              "children" : [
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : "import"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : "Foundation",
+                  "children" : [
+                    {
+                      "type" : "Syntax",
+                      "text" : "Foundation",
+                      "children" : [
+                        {
+                          "type" : "Syntax",
+                          "text" : "Foundation"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "type" : "Syntax",
+          "text" : "import Foundation"
+        },
+        {
+          "type" : "Syntax",
+          "children" : [
+            {
+              "type" : "Syntax",
+              "text" : "class Animal {\n    func speak() {\n        print(\"...\")\n    }\n}",
+              "children" : [
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "class",
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "Animal",
+                  "type" : "Syntax"
+                },
+                {
+                  "children" : [
+                    {
+                      "text" : "{",
+                      "type" : "Syntax"
+                    },
+                    {
+                      "text" : "func speak() {\n        print(\"...\")\n    }",
+                      "children" : [
+                        {
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "text" : "func speak() {\n        print(\"...\")\n    }",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "func"
+                                },
+                                {
+                                  "text" : "speak",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "("
+                                        },
+                                        {
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : ")"
+                                        }
+                                      ],
+                                      "text" : "()"
+                                    }
+                                  ],
+                                  "type" : "Syntax",
+                                  "text" : "()"
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "{"
+                                    },
+                                    {
+                                      "children" : [
+                                        {
+                                          "text" : "print(\"...\")",
+                                          "children" : [
+                                            {
+                                              "text" : "print(\"...\")",
+                                              "type" : "Syntax",
+                                              "children" : [
+                                                {
+                                                  "children" : [
+                                                    {
+                                                      "type" : "Syntax",
+                                                      "text" : "print"
+                                                    }
+                                                  ],
+                                                  "text" : "print",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "text" : "(",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : "\"...\"",
+                                                  "children" : [
+                                                    {
+                                                      "type" : "Syntax",
+                                                      "children" : [
+                                                        {
+                                                          "type" : "Syntax",
+                                                          "children" : [
+                                                            {
+                                                              "text" : "\"",
+                                                              "type" : "Syntax"
+                                                            },
+                                                            {
+                                                              "children" : [
+                                                                {
+                                                                  "text" : "...",
+                                                                  "children" : [
+                                                                    {
+                                                                      "type" : "Syntax",
+                                                                      "text" : "..."
+                                                                    }
+                                                                  ],
+                                                                  "type" : "Syntax"
+                                                                }
+                                                              ],
+                                                              "type" : "Syntax",
+                                                              "text" : "..."
+                                                            },
+                                                            {
+                                                              "type" : "Syntax",
+                                                              "text" : "\""
+                                                            }
+                                                          ],
+                                                          "text" : "\"...\""
+                                                        }
+                                                      ],
+                                                      "text" : "\"...\""
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : ")"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "type" : "Syntax"
+                                        }
+                                      ],
+                                      "type" : "Syntax",
+                                      "text" : "print(\"...\")"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "}"
+                                    }
+                                  ],
+                                  "text" : "{\n        print(\"...\")\n    }",
+                                  "type" : "Syntax"
+                                }
+                              ]
+                            }
+                          ],
+                          "type" : "Syntax",
+                          "text" : "func speak() {\n        print(\"...\")\n    }"
+                        }
+                      ],
+                      "type" : "Syntax"
+                    },
+                    {
+                      "text" : "}",
+                      "type" : "Syntax"
+                    }
+                  ],
+                  "text" : "{\n    func speak() {\n        print(\"...\")\n    }\n}",
+                  "type" : "Syntax"
+                }
+              ]
+            }
+          ],
+          "text" : "class Animal {\n    func speak() {\n        print(\"...\")\n    }\n}"
+        },
+        {
+          "children" : [
+            {
+              "type" : "Syntax",
+              "text" : "class Dog: Animal {\n    override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }\n}",
+              "children" : [
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "class",
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "Dog",
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : ": Animal",
+                  "type" : "Syntax",
+                  "children" : [
+                    {
+                      "type" : "Syntax",
+                      "text" : ":"
+                    },
+                    {
+                      "type" : "Syntax",
+                      "text" : "Animal",
+                      "children" : [
+                        {
+                          "children" : [
+                            {
+                              "children" : [
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "Animal"
+                                }
+                              ],
+                              "text" : "Animal",
+                              "type" : "Syntax"
+                            }
+                          ],
+                          "type" : "Syntax",
+                          "text" : "Animal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "text" : "{\n    override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }\n}",
+                  "children" : [
+                    {
+                      "type" : "Syntax",
+                      "text" : "{"
+                    },
+                    {
+                      "text" : "override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }",
+                      "type" : "Syntax",
+                      "children" : [
+                        {
+                          "type" : "Syntax",
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "text" : "override func speak() {\n        bark()\n    }",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "override",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "override"
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "type" : "Syntax",
+                                  "text" : "override"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "func"
+                                },
+                                {
+                                  "text" : "speak",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "()",
+                                  "children" : [
+                                    {
+                                      "children" : [
+                                        {
+                                          "text" : "(",
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : ")"
+                                        }
+                                      ],
+                                      "type" : "Syntax",
+                                      "text" : "()"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "{"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "bark()",
+                                          "children" : [
+                                            {
+                                              "text" : "bark()",
+                                              "type" : "Syntax",
+                                              "children" : [
+                                                {
+                                                  "children" : [
+                                                    {
+                                                      "text" : "bark",
+                                                      "type" : "Syntax"
+                                                    }
+                                                  ],
+                                                  "type" : "Syntax",
+                                                  "text" : "bark"
+                                                },
+                                                {
+                                                  "text" : "(",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : ")"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ],
+                                      "text" : "bark()"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "}"
+                                    }
+                                  ],
+                                  "type" : "Syntax",
+                                  "text" : "{\n        bark()\n    }"
+                                }
+                              ]
+                            }
+                          ],
+                          "text" : "override func speak() {\n        bark()\n    }"
+                        },
+                        {
+                          "text" : "func bark() {\n        print(\"Woof\")\n    }",
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "text" : "func bark() {\n        print(\"Woof\")\n    }",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "func"
+                                },
+                                {
+                                  "text" : "bark",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "text" : "()",
+                                  "type" : "Syntax",
+                                  "children" : [
+                                    {
+                                      "children" : [
+                                        {
+                                          "text" : "(",
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "text" : ")",
+                                          "type" : "Syntax"
+                                        }
+                                      ],
+                                      "text" : "()",
+                                      "type" : "Syntax"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "children" : [
+                                    {
+                                      "text" : "{",
+                                      "type" : "Syntax"
+                                    },
+                                    {
+                                      "children" : [
+                                        {
+                                          "children" : [
+                                            {
+                                              "text" : "print(\"Woof\")",
+                                              "children" : [
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : "print",
+                                                  "children" : [
+                                                    {
+                                                      "type" : "Syntax",
+                                                      "text" : "print"
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : "("
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : "\"Woof\"",
+                                                  "children" : [
+                                                    {
+                                                      "type" : "Syntax",
+                                                      "text" : "\"Woof\"",
+                                                      "children" : [
+                                                        {
+                                                          "type" : "Syntax",
+                                                          "text" : "\"Woof\"",
+                                                          "children" : [
+                                                            {
+                                                              "type" : "Syntax",
+                                                              "text" : "\""
+                                                            },
+                                                            {
+                                                              "type" : "Syntax",
+                                                              "text" : "Woof",
+                                                              "children" : [
+                                                                {
+                                                                  "children" : [
+                                                                    {
+                                                                      "text" : "Woof",
+                                                                      "type" : "Syntax"
+                                                                    }
+                                                                  ],
+                                                                  "type" : "Syntax",
+                                                                  "text" : "Woof"
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "text" : "\"",
+                                                              "type" : "Syntax"
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "text" : ")",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ],
+                                              "type" : "Syntax"
+                                            }
+                                          ],
+                                          "text" : "print(\"Woof\")",
+                                          "type" : "Syntax"
+                                        }
+                                      ],
+                                      "text" : "print(\"Woof\")",
+                                      "type" : "Syntax"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "}"
+                                    }
+                                  ],
+                                  "text" : "{\n        print(\"Woof\")\n    }"
+                                }
+                              ]
+                            }
+                          ],
+                          "type" : "Syntax"
+                        }
+                      ]
+                    },
+                    {
+                      "text" : "}",
+                      "type" : "Syntax"
+                    }
+                  ],
+                  "type" : "Syntax"
+                }
+              ]
+            }
+          ],
+          "type" : "Syntax",
+          "text" : "class Dog: Animal {\n    override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }\n}"
+        },
+        {
+          "type" : "Syntax",
+          "children" : [
+            {
+              "type" : "Syntax",
+              "text" : "class Cat: Animal {\n    override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }\n}",
+              "children" : [
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "class",
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : "Cat"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : ": Animal",
+                  "children" : [
+                    {
+                      "text" : ":",
+                      "type" : "Syntax"
+                    },
+                    {
+                      "children" : [
+                        {
+                          "text" : "Animal",
+                          "type" : "Syntax",
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "text" : "Animal",
+                              "children" : [
+                                {
+                                  "text" : "Animal",
+                                  "type" : "Syntax"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ],
+                      "type" : "Syntax",
+                      "text" : "Animal"
+                    }
+                  ]
+                },
+                {
+                  "text" : "{\n    override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }\n}",
+                  "type" : "Syntax",
+                  "children" : [
+                    {
+                      "text" : "{",
+                      "type" : "Syntax"
+                    },
+                    {
+                      "type" : "Syntax",
+                      "text" : "override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }",
+                      "children" : [
+                        {
+                          "children" : [
+                            {
+                              "text" : "override func speak() {\n        meow()\n    }",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "override"
+                                        }
+                                      ],
+                                      "text" : "override",
+                                      "type" : "Syntax"
+                                    }
+                                  ],
+                                  "type" : "Syntax",
+                                  "text" : "override"
+                                },
+                                {
+                                  "text" : "func",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "speak"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "()",
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "()",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "("
+                                        },
+                                        {
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : ")"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "text" : "{",
+                                      "type" : "Syntax"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "meow()",
+                                      "children" : [
+                                        {
+                                          "children" : [
+                                            {
+                                              "type" : "Syntax",
+                                              "text" : "meow()",
+                                              "children" : [
+                                                {
+                                                  "children" : [
+                                                    {
+                                                      "type" : "Syntax",
+                                                      "text" : "meow"
+                                                    }
+                                                  ],
+                                                  "type" : "Syntax",
+                                                  "text" : "meow"
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : "("
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : ")"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "type" : "Syntax",
+                                          "text" : "meow()"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "}"
+                                    }
+                                  ],
+                                  "type" : "Syntax",
+                                  "text" : "{\n        meow()\n    }"
+                                }
+                              ],
+                              "type" : "Syntax"
+                            }
+                          ],
+                          "type" : "Syntax",
+                          "text" : "override func speak() {\n        meow()\n    }"
+                        },
+                        {
+                          "text" : "func meow() {\n        print(\"Meow\")\n    }",
+                          "children" : [
+                            {
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "text" : "func",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "meow"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "()",
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "("
+                                        },
+                                        {
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : ")"
+                                        }
+                                      ],
+                                      "text" : "()"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "text" : "{\n        print(\"Meow\")\n    }",
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "{"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "print(\"Meow\")",
+                                      "children" : [
+                                        {
+                                          "children" : [
+                                            {
+                                              "type" : "Syntax",
+                                              "text" : "print(\"Meow\")",
+                                              "children" : [
+                                                {
+                                                  "type" : "Syntax",
+                                                  "children" : [
+                                                    {
+                                                      "type" : "Syntax",
+                                                      "text" : "print"
+                                                    }
+                                                  ],
+                                                  "text" : "print"
+                                                },
+                                                {
+                                                  "text" : "(",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "text" : "\"Meow\"",
+                                                  "type" : "Syntax",
+                                                  "children" : [
+                                                    {
+                                                      "children" : [
+                                                        {
+                                                          "text" : "\"Meow\"",
+                                                          "type" : "Syntax",
+                                                          "children" : [
+                                                            {
+                                                              "text" : "\"",
+                                                              "type" : "Syntax"
+                                                            },
+                                                            {
+                                                              "type" : "Syntax",
+                                                              "text" : "Meow",
+                                                              "children" : [
+                                                                {
+                                                                  "children" : [
+                                                                    {
+                                                                      "type" : "Syntax",
+                                                                      "text" : "Meow"
+                                                                    }
+                                                                  ],
+                                                                  "type" : "Syntax",
+                                                                  "text" : "Meow"
+                                                                }
+                                                              ]
+                                                            },
+                                                            {
+                                                              "text" : "\"",
+                                                              "type" : "Syntax"
+                                                            }
+                                                          ]
+                                                        }
+                                                      ],
+                                                      "text" : "\"Meow\"",
+                                                      "type" : "Syntax"
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : ")"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "text" : "print(\"Meow\")",
+                                          "type" : "Syntax"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "}"
+                                    }
+                                  ],
+                                  "type" : "Syntax"
+                                }
+                              ],
+                              "type" : "Syntax",
+                              "text" : "func meow() {\n        print(\"Meow\")\n    }"
+                            }
+                          ],
+                          "type" : "Syntax"
+                        }
+                      ]
+                    },
+                    {
+                      "type" : "Syntax",
+                      "text" : "}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "text" : "class Cat: Animal {\n    override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }\n}"
+        },
+        {
+          "type" : "Syntax",
+          "text" : "func makeAnimalSpeak(animal: Animal) {\n    animal.speak()\n}",
+          "children" : [
+            {
+              "children" : [
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "func",
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "makeAnimalSpeak",
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "(animal: Animal)",
+                  "children" : [
+                    {
+                      "text" : "(animal: Animal)",
+                      "type" : "Syntax",
+                      "children" : [
+                        {
+                          "text" : "(",
+                          "type" : "Syntax"
+                        },
+                        {
+                          "type" : "Syntax",
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "text" : "animal: Animal",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "animal"
+                                },
+                                {
+                                  "text" : ":",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "Animal"
+                                    }
+                                  ],
+                                  "text" : "Animal",
+                                  "type" : "Syntax"
+                                }
+                              ]
+                            }
+                          ],
+                          "text" : "animal: Animal"
+                        },
+                        {
+                          "text" : ")",
+                          "type" : "Syntax"
+                        }
+                      ]
+                    }
+                  ],
+                  "type" : "Syntax"
+                },
+                {
+                  "text" : "{\n    animal.speak()\n}",
+                  "children" : [
+                    {
+                      "type" : "Syntax",
+                      "text" : "{"
+                    },
+                    {
+                      "children" : [
+                        {
+                          "text" : "animal.speak()",
+                          "type" : "Syntax",
+                          "children" : [
+                            {
+                              "text" : "animal.speak()",
+                              "children" : [
+                                {
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "animal",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "animal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "text" : ".",
+                                      "type" : "Syntax"
+                                    },
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "speak",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "speak"
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "type" : "Syntax",
+                                  "text" : "animal.speak"
+                                },
+                                {
+                                  "text" : "(",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : ")"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                }
+                              ],
+                              "type" : "Syntax"
+                            }
+                          ]
+                        }
+                      ],
+                      "text" : "animal.speak()",
+                      "type" : "Syntax"
+                    },
+                    {
+                      "type" : "Syntax",
+                      "text" : "}"
+                    }
+                  ],
+                  "type" : "Syntax"
+                }
+              ],
+              "text" : "func makeAnimalSpeak(animal: Animal) {\n    animal.speak()\n}",
+              "type" : "Syntax"
+            }
+          ]
+        },
+        {
+          "children" : [
+            {
+              "type" : "Syntax",
+              "text" : "func main() {\n    let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)\n}",
+              "children" : [
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : "func"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : "main"
+                },
+                {
+                  "type" : "Syntax",
+                  "text" : "()",
+                  "children" : [
+                    {
+                      "children" : [
+                        {
+                          "type" : "Syntax",
+                          "text" : "("
+                        },
+                        {
+                          "type" : "Syntax"
+                        },
+                        {
+                          "type" : "Syntax",
+                          "text" : ")"
+                        }
+                      ],
+                      "type" : "Syntax",
+                      "text" : "()"
+                    }
+                  ]
+                },
+                {
+                  "text" : "{\n    let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)\n}",
+                  "children" : [
+                    {
+                      "type" : "Syntax",
+                      "text" : "{"
+                    },
+                    {
+                      "text" : "let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)",
+                      "type" : "Syntax",
+                      "children" : [
+                        {
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "let"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "dog = Dog()",
+                                  "children" : [
+                                    {
+                                      "text" : "dog = Dog()",
+                                      "children" : [
+                                        {
+                                          "text" : "dog",
+                                          "type" : "Syntax",
+                                          "children" : [
+                                            {
+                                              "text" : "dog",
+                                              "type" : "Syntax"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "text" : "= Dog()",
+                                          "children" : [
+                                            {
+                                              "type" : "Syntax",
+                                              "text" : "="
+                                            },
+                                            {
+                                              "type" : "Syntax",
+                                              "text" : "Dog()",
+                                              "children" : [
+                                                {
+                                                  "text" : "Dog",
+                                                  "type" : "Syntax",
+                                                  "children" : [
+                                                    {
+                                                      "text" : "Dog",
+                                                      "type" : "Syntax"
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : "("
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax",
+                                                  "text" : ")"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ]
+                                            }
+                                          ],
+                                          "type" : "Syntax"
+                                        }
+                                      ],
+                                      "type" : "Syntax"
+                                    }
+                                  ]
+                                }
+                              ],
+                              "text" : "let dog = Dog()"
+                            }
+                          ],
+                          "type" : "Syntax",
+                          "text" : "let dog = Dog()"
+                        },
+                        {
+                          "text" : "let cat = Cat()",
+                          "type" : "Syntax",
+                          "children" : [
+                            {
+                              "text" : "let cat = Cat()",
+                              "type" : "Syntax",
+                              "children" : [
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "text" : "let",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "cat = Cat()",
+                                  "children" : [
+                                    {
+                                      "children" : [
+                                        {
+                                          "children" : [
+                                            {
+                                              "text" : "cat",
+                                              "type" : "Syntax"
+                                            }
+                                          ],
+                                          "type" : "Syntax",
+                                          "text" : "cat"
+                                        },
+                                        {
+                                          "text" : "= Cat()",
+                                          "children" : [
+                                            {
+                                              "type" : "Syntax",
+                                              "text" : "="
+                                            },
+                                            {
+                                              "children" : [
+                                                {
+                                                  "text" : "Cat",
+                                                  "children" : [
+                                                    {
+                                                      "text" : "Cat",
+                                                      "type" : "Syntax"
+                                                    }
+                                                  ],
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "text" : "(",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "text" : ")",
+                                                  "type" : "Syntax"
+                                                },
+                                                {
+                                                  "type" : "Syntax"
+                                                }
+                                              ],
+                                              "type" : "Syntax",
+                                              "text" : "Cat()"
+                                            }
+                                          ],
+                                          "type" : "Syntax"
+                                        }
+                                      ],
+                                      "type" : "Syntax",
+                                      "text" : "cat = Cat()"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type" : "Syntax",
+                          "text" : "makeAnimalSpeak(animal: dog)",
+                          "children" : [
+                            {
+                              "type" : "Syntax",
+                              "text" : "makeAnimalSpeak(animal: dog)",
+                              "children" : [
+                                {
+                                  "text" : "makeAnimalSpeak",
+                                  "type" : "Syntax",
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "makeAnimalSpeak"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "("
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "animal: dog",
+                                      "children" : [
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "animal"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : ":"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : "dog",
+                                          "children" : [
+                                            {
+                                              "text" : "dog",
+                                              "type" : "Syntax"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "text" : "animal: dog"
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : ")"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "text" : "makeAnimalSpeak(animal: cat)",
+                          "children" : [
+                            {
+                              "text" : "makeAnimalSpeak(animal: cat)",
+                              "children" : [
+                                {
+                                  "text" : "makeAnimalSpeak",
+                                  "type" : "Syntax",
+                                  "children" : [
+                                    {
+                                      "type" : "Syntax",
+                                      "text" : "makeAnimalSpeak"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "("
+                                },
+                                {
+                                  "type" : "Syntax",
+                                  "text" : "animal: cat",
+                                  "children" : [
+                                    {
+                                      "text" : "animal: cat",
+                                      "type" : "Syntax",
+                                      "children" : [
+                                        {
+                                          "text" : "animal",
+                                          "type" : "Syntax"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "text" : ":"
+                                        },
+                                        {
+                                          "type" : "Syntax",
+                                          "children" : [
+                                            {
+                                              "type" : "Syntax",
+                                              "text" : "cat"
+                                            }
+                                          ],
+                                          "text" : "cat"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "text" : ")",
+                                  "type" : "Syntax"
+                                },
+                                {
+                                  "type" : "Syntax"
+                                }
+                              ],
+                              "type" : "Syntax"
+                            }
+                          ],
+                          "type" : "Syntax"
+                        }
+                      ]
+                    },
+                    {
+                      "type" : "Syntax",
+                      "text" : "}"
+                    }
+                  ],
+                  "type" : "Syntax"
+                }
+              ]
+            }
+          ],
+          "type" : "Syntax",
+          "text" : "func main() {\n    let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)\n}"
+        }
+      ],
+      "text" : "import Foundation\n\nclass Animal {\n    func speak() {\n        print(\"...\")\n    }\n}\n\nclass Dog: Animal {\n    override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }\n}\n\nclass Cat: Animal {\n    override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }\n}\n\nfunc makeAnimalSpeak(animal: Animal) {\n    animal.speak()\n}\n\nfunc main() {\n    let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)\n}",
+      "type" : "Syntax"
+    },
+    {
+      "type" : "Syntax"
+    }
+  ],
+  "text" : "import Foundation\n\nclass Animal {\n    func speak() {\n        print(\"...\")\n    }\n}\n\nclass Dog: Animal {\n    override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }\n}\n\nclass Cat: Animal {\n    override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }\n}\n\nfunc makeAnimalSpeak(animal: Animal) {\n    animal.speak()\n}\n\nfunc main() {\n    let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)\n}"
+}
