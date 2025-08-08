@@ -1,0 +1,722 @@
+{
+  "meta" : {
+    "model" : "deepseek-coder-7b-lora",
+    "prompt_context" : "다음 입력은 Swift 코드의 심벌(AST 조각, 호출\/참조\/속성\/상속\/채택 등) 정보입니다.\n1. 각 심벌에 대해 obfuscation_exclude 값을 yes, no, unsure 중 하나로 선택.\n2. tags 필드에는 제외 이유를 표준 태그로 작성.\n3. rationale에는 한두 줄의 간결한 설명 작성.\n4. 모든 심벌은 해당하는 종류(classes, structs, enums, ...) 배열 안에 넣기.",
+    "tool" : "obfuscation_exclude_assistant"
+  },
+  "decisions" : {
+    "methods" : [
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "modifiers" : [
+
+          ],
+          "decl_source" : "func speak() {\n        print(\"...\")\n    }",
+          "override_depth" : 0,
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "is_objc_exposed" : false,
+          "cross_module_refs" : false,
+          "inherits" : [
+
+          ],
+          "conforms" : [
+
+          ],
+          "type_signature" : "()",
+          "extension_file_count_same_name" : 0,
+          "keypath_refs" : [
+
+          ],
+          "is_swiftdata_model" : false,
+          "symbol_kind" : "method",
+          "references" : [
+            "print"
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "print"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:4:5",
+        "symbol_name" : "speak(())"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "decl_source" : "override func speak() {\n        bark()\n    }",
+          "override_depth" : 1,
+          "modifiers" : [
+            "override"
+          ],
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "is_objc_exposed" : false,
+          "inherits" : [
+
+          ],
+          "cross_module_refs" : false,
+          "conforms" : [
+
+          ],
+          "type_signature" : "()",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "symbol_kind" : "method",
+          "references" : [
+            "bark"
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "bark"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:10:5",
+        "symbol_name" : "speak(())"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "access_level" : "internal",
+          "is_ffi_entry" : false,
+          "modifiers" : [
+
+          ],
+          "override_depth" : 0,
+          "decl_source" : "func bark() {\n        print(\"Woof\")\n    }",
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "cross_module_refs" : false,
+          "is_objc_exposed" : false,
+          "inherits" : [
+
+          ],
+          "conforms" : [
+
+          ],
+          "type_signature" : "()",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "symbol_kind" : "method",
+          "references" : [
+            "print"
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "print"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:14:5",
+        "symbol_name" : "bark(())"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "decl_source" : "override func speak() {\n        meow()\n    }",
+          "override_depth" : 1,
+          "modifiers" : [
+            "override"
+          ],
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "cross_module_refs" : false,
+          "is_objc_exposed" : false,
+          "inherits" : [
+
+          ],
+          "conforms" : [
+
+          ],
+          "type_signature" : "()",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "symbol_kind" : "method",
+          "references" : [
+            "meow"
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "meow"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:20:5",
+        "symbol_name" : "speak(())"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "decl_source" : "func meow() {\n        print(\"Meow\")\n    }",
+          "override_depth" : 0,
+          "modifiers" : [
+
+          ],
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "cross_module_refs" : false,
+          "inherits" : [
+
+          ],
+          "is_objc_exposed" : false,
+          "conforms" : [
+
+          ],
+          "type_signature" : "()",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "symbol_kind" : "method",
+          "kvc_kvo_strings" : [
+
+          ],
+          "references" : [
+            "print"
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "print"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:24:5",
+        "symbol_name" : "meow(())"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "access_level" : "internal",
+          "is_ffi_entry" : false,
+          "decl_source" : "func makeAnimalSpeak(animal: Animal) {\n    animal.speak()\n}",
+          "override_depth" : 0,
+          "modifiers" : [
+
+          ],
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "is_objc_exposed" : false,
+          "inherits" : [
+
+          ],
+          "cross_module_refs" : false,
+          "conforms" : [
+
+          ],
+          "type_signature" : "(animal: Animal)",
+          "extension_file_count_same_name" : 0,
+          "keypath_refs" : [
+
+          ],
+          "is_swiftdata_model" : false,
+          "kvc_kvo_strings" : [
+
+          ],
+          "symbol_kind" : "method",
+          "references" : [
+            "animal",
+            "animal.speak",
+            "speak"
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "animal.speak"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:29:1",
+        "symbol_name" : "makeAnimalSpeak((animal: Animal))"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "access_level" : "internal",
+          "is_ffi_entry" : false,
+          "decl_source" : "func main() {\n    let dog = Dog()\n    let cat = Cat()\n    makeAnimalSpeak(animal: dog)\n    makeAnimalSpeak(animal: cat)\n}",
+          "override_depth" : 0,
+          "modifiers" : [
+
+          ],
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "FuncDecl"
+          ],
+          "cross_module_refs" : false,
+          "is_objc_exposed" : false,
+          "inherits" : [
+
+          ],
+          "conforms" : [
+
+          ],
+          "type_signature" : "()",
+          "extension_file_count_same_name" : 0,
+          "keypath_refs" : [
+
+          ],
+          "is_swiftdata_model" : false,
+          "symbol_kind" : "method",
+          "references" : [
+            "Cat",
+            "Dog",
+            "cat",
+            "dog",
+            "makeAnimalSpeak"
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+            "Cat",
+            "Dog",
+            "makeAnimalSpeak"
+          ]
+        },
+        "symbol_id" : ".\/input.swift:33:1",
+        "symbol_name" : "main(())"
+      }
+    ],
+    "protocols" : [
+
+    ],
+    "subscripts" : [
+
+    ],
+    "extensions" : [
+
+    ],
+    "classes" : [
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "modifiers" : [
+
+          ],
+          "override_depth" : 0,
+          "decl_source" : "class Animal {\n    func speak() {\n        print(\"...\")\n    }\n}",
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "ClassDecl"
+          ],
+          "cross_module_refs" : false,
+          "is_objc_exposed" : false,
+          "inherits" : [
+
+          ],
+          "conforms" : [
+
+          ],
+          "type_signature" : "",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "references" : [
+
+          ],
+          "symbol_kind" : "class",
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+
+          ]
+        },
+        "symbol_id" : ".\/input.swift:3:1",
+        "symbol_name" : "Animal"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "access_level" : "internal",
+          "is_ffi_entry" : false,
+          "modifiers" : [
+
+          ],
+          "override_depth" : 0,
+          "decl_source" : "class Dog: Animal {\n    override func speak() {\n        bark()\n    }\n\n    func bark() {\n        print(\"Woof\")\n    }\n}",
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "ClassDecl"
+          ],
+          "cross_module_refs" : false,
+          "inherits" : [
+            "Animal"
+          ],
+          "is_objc_exposed" : false,
+          "conforms" : [
+            "Animal"
+          ],
+          "type_signature" : "",
+          "extension_file_count_same_name" : 0,
+          "keypath_refs" : [
+
+          ],
+          "is_swiftdata_model" : false,
+          "symbol_kind" : "class",
+          "kvc_kvo_strings" : [
+
+          ],
+          "references" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+
+          ]
+        },
+        "symbol_id" : ".\/input.swift:9:1",
+        "symbol_name" : "Dog"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "access_level" : "internal",
+          "is_ffi_entry" : false,
+          "modifiers" : [
+
+          ],
+          "override_depth" : 0,
+          "decl_source" : "class Cat: Animal {\n    override func speak() {\n        meow()\n    }\n\n    func meow() {\n        print(\"Meow\")\n    }\n}",
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "ClassDecl"
+          ],
+          "cross_module_refs" : false,
+          "inherits" : [
+            "Animal"
+          ],
+          "is_objc_exposed" : false,
+          "conforms" : [
+            "Animal"
+          ],
+          "type_signature" : "",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "symbol_kind" : "class",
+          "references" : [
+
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+
+          ]
+        },
+        "symbol_id" : ".\/input.swift:19:1",
+        "symbol_name" : "Cat"
+      }
+    ],
+    "deinitializers" : [
+
+    ],
+    "enumCases" : [
+
+    ],
+    "structs" : [
+
+    ],
+    "properties" : [
+
+    ],
+    "enums" : [
+
+    ],
+    "initializers" : [
+
+    ],
+    "variables" : [
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "modifiers" : [
+
+          ],
+          "override_depth" : 0,
+          "decl_source" : "let dog = Dog()",
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "VariableDecl"
+          ],
+          "cross_module_refs" : false,
+          "inherits" : [
+
+          ],
+          "is_objc_exposed" : false,
+          "conforms" : [
+
+          ],
+          "type_signature" : "",
+          "extension_file_count_same_name" : 0,
+          "keypath_refs" : [
+
+          ],
+          "is_swiftdata_model" : false,
+          "symbol_kind" : "variable",
+          "references" : [
+
+          ],
+          "kvc_kvo_strings" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+
+          ]
+        },
+        "symbol_id" : ".\/input.swift:34:5",
+        "symbol_name" : "dog"
+      },
+      {
+        "input" : {
+          "is_protocol_requirement_impl" : false,
+          "codable_synthesized" : false,
+          "is_ffi_entry" : false,
+          "access_level" : "internal",
+          "decl_source" : "let cat = Cat()",
+          "override_depth" : 0,
+          "modifiers" : [
+
+          ],
+          "is_coredata_nsmanaged" : false,
+          "ast_path" : [
+            "SourceFile",
+            "VariableDecl"
+          ],
+          "cross_module_refs" : false,
+          "inherits" : [
+
+          ],
+          "is_objc_exposed" : false,
+          "conforms" : [
+
+          ],
+          "type_signature" : "",
+          "extension_file_count_same_name" : 0,
+          "is_swiftdata_model" : false,
+          "keypath_refs" : [
+
+          ],
+          "symbol_kind" : "variable",
+          "kvc_kvo_strings" : [
+
+          ],
+          "references" : [
+
+          ],
+          "called_by" : [
+
+          ],
+          "ffi_names" : [
+
+          ],
+          "selector_refs" : [
+
+          ],
+          "attributes" : [
+
+          ],
+          "calls_out" : [
+
+          ]
+        },
+        "symbol_id" : ".\/input.swift:35:5",
+        "symbol_name" : "cat"
+      }
+    ]
+  }
+}
