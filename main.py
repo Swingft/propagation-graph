@@ -31,9 +31,10 @@ def main():
 
 
     pattern_to_index = {pattern: i + 1 for i, pattern in enumerate(master_patterns)}
-
+    # 269부터
     # 64번째 조합부터 시작 (Python 인덱스는 0부터 시작하므로 63)
-    start_index = 79
+    start_index = 269
+    STOP_BEFORE = 300  # ✅ 300/575 전까지만 (299까지) 실행
     combinations_to_run = all_combinations[start_index:]
 
     total_combinations = len(all_combinations)
@@ -42,6 +43,11 @@ def main():
     # 각 조합을 순회하며 AI 모델들을 호출합니다.
     # enumerate의 시작 번호를 1로 설정하여 로그를 1부터 표시합니다.
     for i, current_combination in enumerate(combinations_to_run, start=start_index + 1):
+
+        # ✅ 300 도달 전까지만 실행
+        if i >= STOP_BEFORE:
+            print(f"\n⏹️ 요청한 범위까지만 실행 완료: {start_index + 1} ~ {STOP_BEFORE - 1}/{total_combinations}")
+            break
 
         indices = sorted([pattern_to_index[p] for p in current_combination])
         filename_prefix = f"pattern_{'_'.join(map(str, indices))}"
@@ -83,7 +89,7 @@ def main():
             print(f"⏭️ {filename_prefix} 저장/업로드 생략 후 다음으로 진행")
 
         print(f"--- {filename_prefix} 처리 완료, 2초 대기 ---")
-        time.sleep(2)
+        time.sleep(12)
 
     print("\n🎉 모든 패턴 조합에 대한 작업이 완료되었습니다.")
 

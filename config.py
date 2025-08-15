@@ -802,15 +802,34 @@ BASE_PROMPT_STRUCTURE = {
 USER_CONTENT_TEMPLATE = {
     "task": f"Here is a list of major patterns that complicate Swift obfuscation analysis: {json.dumps(OBFUSCATION_EXCLUSION_PATTERNS)}. From this list, organically combine the patterns specified in the `parameters.patterns` array to generate a single, complex, and syntactically valid Swift source code file. Refer to the `examples` below to understand the meaning of each pattern and how to combine them.",
     "parameters": {
-        "patterns": []  # This will be filled dynamically
+        "patterns": []
     },
-    "examples": {},  # This will be filled dynamically
+    "examples": {},
     "constraints": [
         {
             "constraint": "Mandatory Use of Examples",
             "description": "For each pattern from the `parameters.patterns` list, you MUST incorporate at least THREE distinct techniques or structures demonstrated in its corresponding example from the `examples` section. This is a critical requirement."
         },
-        # ... (나머지 모든 constraints 내용은 여기에 그대로 들어갑니다) ...
+        {
+            "constraint": "Deeply interwoven logical structure",
+            "description": "Do not merely list patterns in sequence. Interweave patterns to create complex call graphs and logical dependencies. For example, a class that uses `dynamic_dispatch` has its state managed by a `swiftui_property_wrapper`, and that class processes data decoded via `codable_synthesis`."
+        },
+        {
+            "constraint": "Creative and non-obvious combinations",
+            "description": "Combinations of patterns must not be trivial or generic. Seek and implement non-obvious, surprising, or complex interactions among language features that produce challenging edge cases."
+        },
+        {
+            "constraint": "Structural diversity",
+            "description": "If this prompt is provided multiple times with the same parameters, each result should be structurally and conceptually different. Avoid boilerplate and repetitive structures."
+        },
+        {
+            "constraint": "Realistic and self-contained code",
+            "description": "The generated code should reflect a realistic application scenario. Avoid trivial or academic examples. The final output must be a single, self-contained code block that includes all necessary imports (e.g., `import SwiftUI`)."
+        },
+        {
+            "constraint": "No placeholders or comments",
+            "description": "Placeholder comments such as '... implementation details ...' are strictly forbidden. The final code must not include any comments of any kind."
+        },
         {
             "constraint": "Compilation Requirement",
             "description": "The code must be fully functional and compile without any errors or warnings using Swift 5.7 or later."
@@ -850,6 +869,7 @@ def create_prompt_config(selected_patterns: list) -> dict:
     final_prompt["messages"][1]["content"] = content_string
 
     return final_prompt
+
 
 
 
