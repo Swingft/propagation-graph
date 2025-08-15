@@ -1,51 +1,62 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import vertexai
-from vertexai.generative_models import GenerativeModel
+import google.generativeai as genai
 from google_drive_handler import GoogleDriveHandler
+import time
+from google.api_core import exceptions
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-# --- 1. Vertex AI 및 환경 변수 설정 ---
-load_dotenv()  # .env 파일이 프로젝트 루트에 있다고 가정
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
-LOCATION = os.getenv("GOOGLE_LOCATION")
-
-if not PROJECT_ID or not LOCATION:
-    raise ValueError("GOOGLE_PROJECT_ID and GOOGLE_LOCATION must be set in your .env file.")
-vertexai.init(project=PROJECT_ID, location=LOCATION)
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY must be set in your .env file.")
+genai.configure(api_key=API_KEY)
 
 
 class GeminiHandler:
-    """Vertex AI Gemini API와의 상호작용을 처리하는 핸들러."""
+    # 안전 설정을 가장 낮은 수준으로 조정
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
 
-    # 사용할 모델을 클래스 속성으로 정의
-    model = GenerativeModel("gemini-1.5-pro-001")
+    model = genai.GenerativeModel("gemini-2.5-pro", safety_settings=safety_settings)
 
     @classmethod
-    def ask(cls, prompt_config):
-        """Gemini 모델에 요청을 보내고 텍스트 응답을 반환합니다."""
-
-        # prompt_config가 딕셔너리 형태일 경우, user content만 추출
+    def ask(cls, prompt_config, retries=3):
+        """
+        Gemini 모델에 요청을 보내고 응답을 반환합니다.
+        API 사용량 초과 시 자동으로 재시도합니다.
+        """
         if isinstance(prompt_config, dict):
-            # 시스템 메시지를 포함한 전체 대화 내용을 전달할 수 있습니다.
-            # 여기서는 간단히 user content만 사용합니다.
-            user_content = next((msg["content"] for msg in prompt_config.get("messages", []) if msg["role"] == "user"),
-                                "")
-            # content가 딕셔너리일 경우 task만 추출
-            if isinstance(user_content, dict):
-                prompt_text = user_content.get("task", "")
-            else:
-                prompt_text = user_content
-        else:  # 단순 문자열일 경우
+            user_message = next((msg for msg in prompt_config.get("messages", []) if msg["role"] == "user"), None)
+            prompt_text = user_message["content"] if user_message else ""
+        else:
             prompt_text = prompt_config
 
-        try:
-            response = cls.model.generate_content(prompt_text)
-            return response.text
-        except Exception as e:
-            print(f"❌ Gemini API error occurred: {e}")
-            return "오류가 발생하여 답변을 생성하지 못했습니다."
+        # --- ✨ 재시도 로직 시작 ---
+        for i in range(retries):
+            try:
+                response = cls.model.generate_content(prompt_text)
+                return response.text
+            except exceptions.ResourceExhausted as e:
+                # --- ✨ 수정된 부분 ---
+                # 에러 객체에서 대기 시간을 읽는 대신, 분당 사용량 제한을 피하기 위해 61초간 대기합니다.
+                wait_time = 61
+
+                print(f"  ⚠️ Gemini API 사용량 초과. {wait_time}초 후 재시도합니다... ({i + 1}/{retries})")
+                time.sleep(wait_time)
+            except Exception as e:
+                print(f"❌ Gemini API에서 예상치 못한 에러 발생: {e}")
+                return "오류가 발생하여 답변을 생성하지 못했습니다."
+        # --- ✨ 재시도 로직 끝 ---
+
+        print(f"❌ {retries}번의 시도 후에도 Gemini API 호출에 실패했습니다.")
+        return "오류가 발생하여 답변을 생성하지 못했습니다."
 
     @staticmethod
     def save_and_upload(content: str, filename: str, drive_folder: str, local_dir: str = "./data/gemini_generated"):
@@ -62,25 +73,3 @@ class GeminiHandler:
             GoogleDriveHandler.upload_to_drive(filepath, filename, folder_path=drive_folder)
         except Exception as e:
             print(f"❌ Drive upload failed: {e}")
-
-
-# --- 아래는 예제 코드입니다 ---
-if __name__ == '__main__':
-    # 예제 프롬프트
-    prompt = "SwiftUI를 사용해서 간단한 'Hello, World!'를 표시하는 코드를 작성해줘."
-
-    # Gemini에게 코드 생성 요청
-    generated_code = GeminiHandler.ask(prompt)
-
-    print("\n===== Gemini's Generated Code =====")
-    print(generated_code)
-    print("=" * 30)
-
-    # 생성된 코드를 파일로 저장하고 드라이브에 업로드
-    if "오류가 발생" not in generated_code:
-        GeminiHandler.save_and_upload(
-            content=generated_code,
-            filename="hello_world_gemini.swift",
-            drive_folder="gemini_generated_files",  # 업로드할 드라이브 폴더 이름
-            local_dir="./generated_code/"
-        )

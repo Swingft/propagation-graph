@@ -22,7 +22,7 @@ class ClaudeHandler:
             user_messages = [msg for msg in prompt_config.get("messages", []) if msg["role"] != "system"]
 
             params = {
-                "model": "claude-3-5-sonnet-20240620",
+                "model": "claude-sonnet-4-20250514",
                 "max_tokens": 4096,
                 "messages": user_messages
             }
