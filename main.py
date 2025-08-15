@@ -33,7 +33,7 @@ def main():
     pattern_to_index = {pattern: i + 1 for i, pattern in enumerate(master_patterns)}
 
     # 64번째 조합부터 시작 (Python 인덱스는 0부터 시작하므로 63)
-    start_index = 63
+    start_index = 79
     combinations_to_run = all_combinations[start_index:]
 
     total_combinations = len(all_combinations)
@@ -67,14 +67,20 @@ def main():
         # except Exception as e:
         #     print(f"❌ Claude error for {filename_prefix}: {e}")
 
-        # Gemini
+        # ✅ Gemini: 성공 시에만 저장/업로드. 실패하면 건너뛰고 다음 조합 진행.
         try:
             print(f"🔹 Gemini generating for {filename_prefix}...")
-            gemini_reply = GeminiHandler.ask(prompt_config)
-            GeminiHandler.save_and_upload(gemini_reply, swift_filename,
-                                          drive_folder=f"gemini_generated/{filename_prefix}")
+            gemini_reply = GeminiHandler.ask(prompt_config, retries=5, base_wait=5)
+            # 성공했을 때만 저장/업로드
+            GeminiHandler.save_and_upload(
+                gemini_reply,
+                swift_filename,
+                drive_folder=f"gemini_generated/{filename_prefix}",
+            )
+            print(f"✅ {filename_prefix} 완료")
         except Exception as e:
-            print(f"❌ Gemini error for {filename_prefix}: {e}")
+            print(f"❌ Gemini 실패: {e}")
+            print(f"⏭️ {filename_prefix} 저장/업로드 생략 후 다음으로 진행")
 
         print(f"--- {filename_prefix} 처리 완료, 2초 대기 ---")
         time.sleep(2)
