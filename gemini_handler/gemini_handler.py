@@ -7,7 +7,7 @@ from google.api_core import exceptions
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("GEMINI_API_KEY_DH")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY must be set in your .env file.")
 genai.configure(api_key=API_KEY)

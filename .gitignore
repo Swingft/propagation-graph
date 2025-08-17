@@ -10,3 +10,7 @@ __pycache__/
 *.pyc
 analysis_results/
 data/
+input_label/
+output_label/
+
+

@@ -2,7 +2,6 @@ import itertools
 import time
 import config
 
-# 모든 핸들러를 import 합니다.
 from gpt_handler import GPTHandler
 from claude_handler import ClaudeHandler
 from gemini_handler import GeminiHandler
@@ -31,20 +30,17 @@ def main():
 
 
     pattern_to_index = {pattern: i + 1 for i, pattern in enumerate(master_patterns)}
-    # 269부터
-    # 64번째 조합부터 시작 (Python 인덱스는 0부터 시작하므로 63)
-    start_index = 269
-    STOP_BEFORE = 300  # ✅ 300/575 전까지만 (299까지) 실행
+
+    start_index = 0
+    STOP_BEFORE = 1
     combinations_to_run = all_combinations[start_index:]
 
     total_combinations = len(all_combinations)
     print(f"총 {total_combinations}개 ({combinations_to_test}개 조합)의 패턴 조합에 대한 코드 생성을 시작합니다.")
 
-    # 각 조합을 순회하며 AI 모델들을 호출합니다.
-    # enumerate의 시작 번호를 1로 설정하여 로그를 1부터 표시합니다.
+    # 각 조합을 순회하며 AI 모델들을 호출
     for i, current_combination in enumerate(combinations_to_run, start=start_index + 1):
 
-        # ✅ 300 도달 전까지만 실행
         if i >= STOP_BEFORE:
             print(f"\n⏹️ 요청한 범위까지만 실행 완료: {start_index + 1} ~ {STOP_BEFORE - 1}/{total_combinations}")
             break
@@ -74,22 +70,22 @@ def main():
         #     print(f"❌ Claude error for {filename_prefix}: {e}")
 
         # ✅ Gemini: 성공 시에만 저장/업로드. 실패하면 건너뛰고 다음 조합 진행.
-        try:
-            print(f"🔹 Gemini generating for {filename_prefix}...")
-            gemini_reply = GeminiHandler.ask(prompt_config, retries=5, base_wait=5)
-            # 성공했을 때만 저장/업로드
-            GeminiHandler.save_and_upload(
-                gemini_reply,
-                swift_filename,
-                drive_folder=f"gemini_generated/{filename_prefix}",
-            )
-            print(f"✅ {filename_prefix} 완료")
-        except Exception as e:
-            print(f"❌ Gemini 실패: {e}")
-            print(f"⏭️ {filename_prefix} 저장/업로드 생략 후 다음으로 진행")
+        # try:
+        #     print(f"🔹 Gemini generating for {filename_prefix}...")
+        #     gemini_reply = GeminiHandler.ask(prompt_config, retries=5, base_wait=5)
+        #     # 성공했을 때만 저장/업로드
+        #     GeminiHandler.save_and_upload(
+        #         gemini_reply,
+        #         swift_filename,
+        #         drive_folder=f"gemini_generated/{filename_prefix}",
+        #     )
+        #     print(f"✅ {filename_prefix} 완료")
+        # except Exception as e:
+        #     print(f"❌ Gemini 실패: {e}")
+        #     print(f"⏭️ {filename_prefix} 저장/업로드 생략 후 다음으로 진행")
 
         print(f"--- {filename_prefix} 처리 완료, 2초 대기 ---")
-        time.sleep(12)
+        time.sleep(10)
 
     print("\n🎉 모든 패턴 조합에 대한 작업이 완료되었습니다.")
 
