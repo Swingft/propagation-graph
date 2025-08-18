@@ -6,7 +6,6 @@ import SwiftParser
 
 struct SymbolInput: Codable {
     var symbol_kind: String
-    var decl_source: String
     var ast_path: [String]
     var access_level: String
     var modifiers: [String]
@@ -74,21 +73,6 @@ struct OutputJSON: Codable {
 
 // MARK: - Utilities
 
-extension SyntaxProtocol {
-    func text(in source: String, converter: SourceLocationConverter, maxLines: Int = 40) -> String {
-        let start = self.positionAfterSkippingLeadingTrivia
-        let end = self.endPositionBeforeTrailingTrivia
-        let range = ByteSourceRange(offset: start.utf8Offset, length: end.utf8Offset - start.utf8Offset)
-        let utf8 = source.utf8
-        let startIdx = utf8.index(utf8.startIndex, offsetBy: range.offset)
-        let endIdx = utf8.index(startIdx, offsetBy: range.length)
-        let snippet = String(source[startIdx..<endIdx])
-        let lines = snippet.split(separator: "\n", omittingEmptySubsequences: false)
-        if lines.count <= maxLines { return snippet }
-        return lines.prefix(maxLines).joined(separator: "\n")
-    }
-}
-
 func accessLevel(from modifiers: DeclModifierListSyntax?) -> String {
     guard let mods = modifiers else { return "internal" }
     for m in mods {
@@ -146,7 +130,6 @@ func initializerSignature(_ decl: InitializerDeclSyntax) -> String {
 func deinitializerSignature(_ decl: DeinitializerDeclSyntax) -> String { "deinit" }
 
 func subscriptSignature(_ decl: SubscriptDeclSyntax) -> String {
-    // 최신 API: indices → parameterClause, parameterList → parameters
     decl.parameterClause.parameters.trimmedDescription
 }
 
@@ -159,21 +142,20 @@ func qualTypeName(stack: [String], currentType: String?) -> String {
 final class BodyVisitor: SyntaxVisitor {
     var calls: [String] = []
     var keypaths: [String] = []
-    var selectors: [String] = []   // 텍스트 기반 추출 보조용
+    var selectors: [String] = []
     var kvc: [String] = []
     var refs: [String] = []
 
     override func visit(_ node: FunctionCallExprSyntax) -> SyntaxVisitorContinueKind {
-        let called: String = {
-            if let m = node.calledExpression.as(MemberAccessExprSyntax.self) {
-                return m.trimmedDescription
-            } else {
-                return node.calledExpression.trimmedDescription
-            }
-        }()
-        calls.append(called)
+        // 호출된 함수의 이름만 정확히 추출합니다. (예: `LazyVGrid`, `Text`)
+        if let calledExpr = node.calledExpression.as(DeclReferenceExprSyntax.self) {
+            calls.append(calledExpr.baseName.text)
+        } else if let memberAccess = node.calledExpression.as(MemberAccessExprSyntax.self) {
+            calls.append(memberAccess.declName.baseName.text)
+        }
 
-        let nameText = called.lowercased()
+        // KVC 관련 로직은 기존대로 유지
+        let nameText = (node.calledExpression.trimmedDescription).lowercased()
         let kvcLikely = nameText.contains("valueforkey")
             || nameText.contains("setvalue")
             || nameText.contains("addobserver")
@@ -193,16 +175,15 @@ final class BodyVisitor: SyntaxVisitor {
         return .visitChildren
     }
 
-    // ObjCSelectorExprSyntax가 없는 툴체인을 위해 여기 방문자는 제거하고
-    // scanBodySignals에서 정규식으로 #selector(...)를 추출한다.
-
     override func visit(_ node: DeclReferenceExprSyntax) -> SyntaxVisitorContinueKind {
+        // 참조된 심볼의 기본 이름만 추가합니다.
         refs.append(node.baseName.text)
         return .visitChildren
     }
 
     override func visit(_ node: MemberAccessExprSyntax) -> SyntaxVisitorContinueKind {
-        refs.append(node.trimmedDescription)
+        // 멤버 접근 시, 멤버의 이름만 추가합니다. (예: `.padding`, `.onTapGesture`)
+        refs.append(node.declName.baseName.text)
         return .visitChildren
     }
 }
@@ -253,7 +234,7 @@ final class ExtensionCounter: SyntaxVisitor {
     let ctx: ProjectContext
     init(ctx: ProjectContext) {
         self.ctx = ctx
-        super.init(viewMode: .sourceAccurate) // ✅ 반드시 호출
+        super.init(viewMode: .sourceAccurate)
     }
     override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
         let name = node.extendedType.trimmedDescription
@@ -338,7 +319,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "class",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile", "ClassDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -394,7 +374,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "struct",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile", "StructDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -440,7 +419,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "enum",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile", "EnumDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -485,7 +463,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "protocol",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile", "ProtocolDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -531,7 +508,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "extension",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile","ExtensionDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -581,7 +557,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "method",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile"] + typeStack.map { "\($0)Decl" } + ["FuncDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -627,7 +602,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "initializer",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile"] + typeStack.map { "\($0)Decl" } + ["InitializerDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -673,7 +647,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "deinitializer",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile"] + typeStack.map { "\($0)Decl" } + ["DeinitializerDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -719,7 +692,6 @@ final class SymbolCollector: SyntaxVisitor {
 
         let input = SymbolInput(
             symbol_kind: "subscript",
-            decl_source: node.text(in: source, converter: converter),
             ast_path: ["SourceFile"] + typeStack.map { "\($0)Decl" } + ["SubscriptDecl"],
             access_level: access,
             modifiers: modifiers,
@@ -773,7 +745,6 @@ final class SymbolCollector: SyntaxVisitor {
             let qn = (qualPrefix.isEmpty ? "" : "\(qualPrefix).") + n
             let input = SymbolInput(
                 symbol_kind: kind,
-                decl_source: node.text(in: source, converter: converter),
                 ast_path: ["SourceFile"] + (typeStack.map { "\($0)Decl" }) + ["VariableDecl"],
                 access_level: access,
                 modifiers: modifiers,
@@ -817,7 +788,6 @@ final class SymbolCollector: SyntaxVisitor {
             let symbolID = symbolID(of: node)
             let input = SymbolInput(
                 symbol_kind: "enumCase",
-                decl_source: node.text(in: source, converter: converter),
                 ast_path: ["SourceFile"] + typeStack.map { "\($0)Decl" } + ["EnumCaseDecl"],
                 access_level: access,
                 modifiers: modifiers,
@@ -898,11 +868,7 @@ func buildOutputJSON(for paths: [String]) -> OutputJSON {
         model: "deepseek-coder-7b-lora",
         prompt_context:
 """
-다음 입력은 Swift 코드의 심벌(AST 조각, 호출/참조/속성/상속/채택 등) 정보입니다.
-1. 각 심벌에 대해 obfuscation_exclude 값을 yes, no, unsure 중 하나로 선택.
-2. tags 필드에는 제외 이유를 표준 태그로 작성.
-3. rationale에는 한두 줄의 간결한 설명 작성.
-4. 모든 심벌은 해당하는 종류(classes, structs, enums, ...) 배열 안에 넣기.
+Symbols should generally be organized into their corresponding arrays (classes, structs, enums, ...). However, the grouping structure may be adjusted if necessary.
 """
     )
     return OutputJSON(meta: meta, decisions: merged)

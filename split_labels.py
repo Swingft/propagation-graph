@@ -39,24 +39,37 @@ def process_file_set(base_filename):
     try:
         # 모델별 하위 디렉토리를 순회
         for sub_dir in MODEL_SUB_DIRS:
-            # 1. 입력 파일 처리
+            # --- 1. 입력 파일 처리 (수정된 로직) ---
             input_file_path = os.path.join(INPUT_ROOT_DIR, sub_dir, base_filename)
             if os.path.exists(input_file_path):
                 with open(input_file_path, 'r', encoding='utf-8') as f:
-                    input_data = json.load(f)
+                    full_input_data = json.load(f)
+
+                # 'data' 키 내부의 실제 데이터를 가져옴
+                input_data = full_input_data.get('data', {})
+                mapping_data = full_input_data.get('mapping', {})
 
                 meta_data = input_data.get('meta', {})
                 decisions_data = input_data.get('decisions', {})
 
                 for key in POSSIBLE_KEYS:
                     if key in decisions_data and decisions_data[key]:
-                        split_input_data = {"meta": meta_data, "decisions": {key: decisions_data[key]}}
+                        # 분할된 파일에도 mapping과 data 구조를 유지
+                        split_data_content = {
+                            "meta": meta_data,
+                            "decisions": {key: decisions_data[key]}
+                        }
+                        final_split_structure = {
+                            "mapping": mapping_data,
+                            "data": split_data_content
+                        }
+
                         new_filename = f"{os.path.splitext(base_filename)[0]}_{key}.json"
                         save_path = os.path.join(SPLIT_INPUT_DIR, sub_dir, key, new_filename)
                         with open(save_path, 'w', encoding='utf-8') as f:
-                            json.dump(split_input_data, f, ensure_ascii=False, indent=2)
+                            json.dump(final_split_structure, f, ensure_ascii=False, indent=2)
 
-            # 2. 출력 파일 처리
+            # --- 2. 출력 파일 처리 (기존 로직 유지) ---
             output_file_path = os.path.join(OUTPUT_ROOT_DIR, sub_dir, base_filename)
             if os.path.exists(output_file_path):
                 with open(output_file_path, 'r', encoding='utf-8') as f:

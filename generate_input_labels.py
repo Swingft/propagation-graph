@@ -4,9 +4,8 @@ import subprocess
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import List
+from typing import List, Dict
 from tqdm import tqdm
-
 
 ANALYZER_DIR = Path("SwiftASTAnalyzer")
 ANALYZER_BIN_NAME = "swift-ast-analyzer"
@@ -68,11 +67,35 @@ Example Final Output:
 }
 """
 
+KEY_MAPPING = {
+    "is_protocol_requirement_impl": "p1",
+    "codable_synthesized": "p2",
+    "access_level": "p3",
+    "is_ffi_entry": "p4",
+    "override_depth": "p5",
+    "modifiers": "p6",
+    "is_coredata_nsmanaged": "p7",
+    "ast_path": "p8",
+    "cross_module_refs": "p9",
+    "is_objc_exposed": "p10",
+    "type_signature": "p11",
+    "extension_file_count_same_name": "p12",
+    "is_swiftdata_model": "p13",
+    "symbol_kind": "p14",
+    "references": "p15",
+    "calls_out": "p16",
+    "selector_refs": "p17",
+    "attributes": "p18",
+    "extension_of": "p19",
+    "inherits": "p20",
+    "conforms": "p21"
+}
+
 
 def build_analyzer(analyzer_dir: Path, bin_name: str) -> Path:
     """SwiftASTAnalyzer를 릴리즈 모드로 빌드하고 실행 파일 경로를 반환합니다."""
     print("🚀 SwiftASTAnalyzer 빌드를 시작합니다...")
-    build_process = subprocess.run(
+    subprocess.run(
         ["swift", "build", "-c", "release"],
         cwd=analyzer_dir,
         check=True,
@@ -80,7 +103,6 @@ def build_analyzer(analyzer_dir: Path, bin_name: str) -> Path:
         text=True,
     )
     print("✅ 빌드 완료!")
-
     analyzer_bin = analyzer_dir / ".build" / "release" / bin_name
     if not analyzer_bin.exists():
         raise FileNotFoundError(f"빌드 후에도 실행 파일을 찾을 수 없습니다: {analyzer_bin}")
@@ -108,50 +130,57 @@ def update_prompt_context(data: dict, new_context: str) -> dict:
     return data
 
 
+def compact_input_keys(decisions_data: Dict, mapping: Dict) -> Dict:
+    """'input' 객체 내부의 키를 매핑에 따라 간결한 코드로 변환합니다."""
+    if not isinstance(decisions_data, dict):
+        return decisions_data
+
+    for category_list in decisions_data.values():
+        if isinstance(category_list, list):
+            for symbol_obj in category_list:
+                if 'input' in symbol_obj and isinstance(symbol_obj['input'], dict):
+                    original_input = symbol_obj['input']
+                    compacted_input = {
+                        mapping.get(key, key): value for key, value in original_input.items()
+                    }
+                    symbol_obj['input'] = compacted_input
+    return decisions_data
+
+
 def analyze_single_file(
         swift_file: Path, analyzer_bin: Path, data_root: Path, output_root: Path
 ):
-    """단일 Swift 파일을 분석하고, 빈 배열을 제거한 후 결과를 JSON 파일로 저장합니다."""
+    """단일 Swift 파일을 분석하고, 키 간결화 및 정리를 수행한 후 JSON으로 저장합니다."""
     try:
-        # 출력 경로 계산
         relative_path = swift_file.relative_to(data_root)
         output_dir = output_root / relative_path.parent
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / f"input_{swift_file.stem}.json"
 
-        # Swift 분석기 실행
         result = subprocess.run(
             [str(analyzer_bin), str(swift_file)],
-            capture_output=True,
-            text=True,
-            check=True,
-            encoding="utf-8",
+            capture_output=True, text=True, check=True, encoding="utf-8",
         )
 
-        # 1. Swift 분석기 출력을 JSON 객체로 파싱
-        data = json.loads(result.stdout)
+        original_data = json.loads(result.stdout)
 
-        # 1a. prompt_context 내용을 새로운 텍스트로 교체
-        data = update_prompt_context(data, NEW_PROMPT_CONTEXT)
+        # 1. 'decisions' 데이터 추출 및 키 간결화
+        decisions_data = original_data.get('decisions', {})
+        decisions_data = compact_input_keys(decisions_data, KEY_MAPPING)
 
-        # 2. 'decisions' 딕셔너리 내부를 정리
-        if 'decisions' in data and isinstance(data['decisions'], dict):
-            decisions_data = data['decisions']
-
-            # 2a. 각 심벌의 'input' 딕셔너리에서 빈 리스트를 가진 속성을 제거
+        # 2. 'decisions' 딕셔너리 내부 정리 (빈 배열 속성 및 카테고리 제거)
+        if isinstance(decisions_data, dict):
             for category_list in decisions_data.values():
                 if isinstance(category_list, list):
                     for symbol_obj in category_list:
                         if 'input' in symbol_obj and isinstance(symbol_obj['input'], dict):
-                            input_data = symbol_obj['input']
-                            input_keys_to_remove = [
-                                key for key, value in input_data.items()
+                            keys_to_remove = [
+                                key for key, value in symbol_obj['input'].items()
                                 if isinstance(value, list) and not value
                             ]
-                            for key in input_keys_to_remove:
-                                del input_data[key]
+                            for key in keys_to_remove:
+                                del symbol_obj['input'][key]
 
-            # 2b. 'decisions' 딕셔너리 자체에서 빈 리스트인 카테고리를 제거
             keys_to_remove = [
                 key for key, value in decisions_data.items()
                 if isinstance(value, list) and not value
@@ -159,10 +188,20 @@ def analyze_single_file(
             for key in keys_to_remove:
                 del decisions_data[key]
 
-        # 3. 정리된 JSON 객체를 다시 예쁘게 포맷된 문자열로 변환
-        cleaned_json_string = json.dumps(data, indent=2, ensure_ascii=False)
+        # 3. 최종 출력 구조 생성
+        final_output = {
+            "mapping": KEY_MAPPING,
+            "data": {
+                "meta": original_data.get('meta', {}),
+                "decisions": decisions_data
+            }
+        }
 
-        # 4. 최종 결과를 파일에 저장
+        # 4. prompt_context 업데이트
+        final_output['data'] = update_prompt_context(final_output['data'], NEW_PROMPT_CONTEXT)
+
+        # 5. 최종 결과를 파일에 저장
+        cleaned_json_string = json.dumps(final_output, indent=2, ensure_ascii=False)
         output_file.write_text(cleaned_json_string, encoding="utf-8")
 
         return None
@@ -188,7 +227,6 @@ def main():
         return
 
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
-
     print(f"\n⚙️ 총 {len(swift_files)}개 파일에 대한 병렬 분석을 시작합니다...")
 
     worker_func = partial(
