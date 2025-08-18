@@ -2,6 +2,7 @@ import os
 import json
 import time
 
+# 사용하지 않는 핸들러는 주석 처리하거나 삭제할 수 있습니다.
 # from gpt_handler import GPTHandler
 # from claude_handler import ClaudeHandler
 from gemini_handler import GeminiHandler
@@ -39,16 +40,13 @@ def main():
     """
     .json 파일을 API에 요청으로 보내고, 결과를 저장 및 업로드하는 메인 함수.
     """
+    START_INDEX = 1
+    END_INDEX = 575
 
     json_files = find_json_files()
     if not json_files:
         print("처리할 .json 파일을 찾지 못했습니다. 종료합니다.")
         return
-
-    # 시작할 파일 번호 (1부터 시작). 1로 설정하면 처음부터 시작
-    START_INDEX = 1
-    # 종료할 파일 번호 (해당 번호까지 포함). None으로 설정하면 끝까지 실행
-    END_INDEX = 299
 
     total_files = len(json_files)
     print(f"총 {total_files}개의 .json 파일을 처리합니다.")
@@ -62,9 +60,24 @@ def main():
             break
 
         filename_base = os.path.basename(file_path)
-        print(f"\n--- [{i}/{total_files}] 파일 처리 중: {filename_base} ---")
 
         try:
+            original_filename_no_ext = os.path.splitext(filename_base)[0]
+
+            if original_filename_no_ext.startswith('input_pattern_'):
+                pattern_part = original_filename_no_ext.replace('input_pattern_', '')
+                output_filename = f"output_pattern_{pattern_part}.json"
+            else:
+                output_filename = f"output_pattern_{original_filename_no_ext}.json"
+
+            # 최종 출력 파일 경로를 미리 확인
+            output_path_check = os.path.join(OUTPUT_ROOT, 'gemini_generated', output_filename)
+            if os.path.exists(output_path_check):
+                print(f"--- [{i}/{total_files}] 건너뛰기: 이미 파일이 존재합니다 ({output_filename}) ---")
+                continue
+
+            print(f"\n--- [{i}/{total_files}] 파일 처리 중: {filename_base} ---")
+
             with open(file_path, 'r', encoding='utf-8') as f:
                 request_payload = json.load(f)
 
@@ -75,15 +88,7 @@ def main():
                 print(f"🚨 오류: {filename_base} 파일에 'meta.prompt_context' 또는 'decisions' 데이터가 없습니다. 건너뜁니다.")
                 continue
 
-            original_filename_no_ext = os.path.splitext(filename_base)[0]
-
-            if original_filename_no_ext.startswith('input_pattern_'):
-                pattern_part = original_filename_no_ext.replace('input_pattern_', '')
-                output_filename = f"output_pattern_{pattern_part}.json"
-                drive_folder_suffix = f"output_pattern_{pattern_part}"
-            else:
-                output_filename = f"output_pattern_{original_filename_no_ext}.json"
-                drive_folder_suffix = f"output_pattern_{original_filename_no_ext}"
+            drive_folder_suffix = os.path.splitext(output_filename)[0]
 
             full_prompt = f"""{prompt_instructions}
 
@@ -93,26 +98,6 @@ def main():
 ```
 
 [CRITICAL] Final Output Rules: 1. Your response must be **only a valid JSON object**, with no explanations or extra text. 2. The output must start with `{{` and end with `}}`. 3. Absolutely do not add any introductory, concluding, or summary sentences like "Analysis result...", "These symbols are..." before or after the JSON."""
-
-            # --- GPT 처리 ---
-            """
-            try:
-                print(f"🔹 GPT로 요청 전송 중...")
-                gpt_reply = GPTHandler.ask(full_prompt)
-                # ... save_and_upload ...
-            except Exception as e:
-                print(f"❌ GPT 처리 오류 ({output_filename}): {e}")
-            """
-
-            # --- Claude 처리 ---
-            """
-            try:
-                print(f"🔹 Claude로 요청 전송 중...")
-                claude_reply = ClaudeHandler.ask(full_prompt)
-                # ... save_and_upload ...
-            except Exception as e:
-                print(f"❌ Claude 처리 오류 ({output_filename}): {e}")
-            """
 
             # --- Gemini 처리 ---
             try:

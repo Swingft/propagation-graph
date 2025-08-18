@@ -7,7 +7,7 @@ from google.api_core import exceptions
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY_DH")
+API_KEY = os.getenv("GEMINI_API_KEY_SH")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY must be set in your .env file.")
 genai.configure(api_key=API_KEY)
@@ -30,7 +30,7 @@ class GeminiHandler:
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
     }
 
-    model = genai.GenerativeModel("gemini-2.5-pro", safety_settings=safety_settings)
+    model = genai.GenerativeModel("gemini-2.5-flash", safety_settings=safety_settings)
 
     @classmethod
     def ask(cls, prompt_config, retries: int = 3, base_wait: int = 5) -> str:
