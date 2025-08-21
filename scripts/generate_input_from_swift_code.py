@@ -7,11 +7,13 @@ from functools import partial
 from typing import List, Dict
 from tqdm import tqdm
 
-ANALYZER_DIR = Path("SwiftASTAnalyzer")
-ANALYZER_BIN_NAME = "swift-ast-analyzer"
-TARGET_DATA_ROOT = Path("data")
-TARGET_DIRS_NAMES = ["gpt_generated", "claude_generated", "gemini_generated"]
-OUTPUT_ROOT = Path("input_label")
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
+ANALYZER_DIR = PROJECT_ROOT / "SwiftASTAnalyzer"
+TARGET_DATA_ROOT = PROJECT_ROOT / "data"
+OUTPUT_ROOT = PROJECT_ROOT / "input_label"
+
 
 NEW_PROMPT_CONTEXT = """Your Role: You are an expert static analysis assistant with a deep understanding of Swift's semantic structure. Your mission is to meticulously analyze the provided symbol information to identify which symbols must have their names preserved during code obfuscation and to clearly justify your reasoning.
 
@@ -91,10 +93,10 @@ KEY_MAPPING = {
     "conforms": "p21"
 }
 
-
-def build_analyzer(analyzer_dir: Path, bin_name: str) -> Path:
+def build_analyzer(analyzer_dir: Path) -> Path:
     """SwiftASTAnalyzer를 릴리즈 모드로 빌드하고 실행 파일 경로를 반환합니다."""
     print("🚀 SwiftASTAnalyzer 빌드를 시작합니다...")
+    analyzer_bin_name = "swift-ast-analyzer"
     subprocess.run(
         ["swift", "build", "-c", "release"],
         cwd=analyzer_dir,
@@ -103,7 +105,7 @@ def build_analyzer(analyzer_dir: Path, bin_name: str) -> Path:
         text=True,
     )
     print("✅ 빌드 완료!")
-    analyzer_bin = analyzer_dir / ".build" / "release" / bin_name
+    analyzer_bin = analyzer_dir / ".build" / "release" / analyzer_bin_name
     if not analyzer_bin.exists():
         raise FileNotFoundError(f"빌드 후에도 실행 파일을 찾을 수 없습니다: {analyzer_bin}")
     return analyzer_bin
@@ -216,12 +218,13 @@ def analyze_single_file(
 
 def main():
     try:
-        analyzer_bin = build_analyzer(ANALYZER_DIR, ANALYZER_BIN_NAME)
+        analyzer_bin = build_analyzer(ANALYZER_DIR)
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"🔥 빌드 실패: {e}")
         return
 
-    swift_files = find_swift_files(TARGET_DATA_ROOT, TARGET_DIRS_NAMES)
+    target_dirs_to_scan = ["claude_generated", "gemini_generated"]
+    swift_files = find_swift_files(TARGET_DATA_ROOT, target_dirs_to_scan)
     if not swift_files:
         print("⚠️ 분석할 Swift 파일이 없습니다. 스크립트를 종료합니다.")
         return

@@ -49,7 +49,7 @@ def main():
     메인 함수: 대상 디렉토리에서 JSON 파일을 찾아 병렬로 처리합니다.
     """
     root_dir = 'output_label'
-    target_dirs = ['gpt_generated', 'claude_generated', 'gemini_generated']
+    target_dirs = ['claude_generated', 'gemini_generated']
     file_paths = []
 
     for dir_name in target_dirs:

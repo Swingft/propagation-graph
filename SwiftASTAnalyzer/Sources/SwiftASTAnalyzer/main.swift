@@ -39,7 +39,6 @@ struct Decision: Codable {
 }
 
 struct SymbolRecord: Codable {
-    var symbol_id: String
     var symbol_name: String
     var input: SymbolInput
     var decision: Decision?
@@ -263,12 +262,6 @@ final class SymbolCollector: SyntaxVisitor {
         super.init(viewMode: .sourceAccurate)
     }
 
-    private func symbolID(of node: some SyntaxProtocol) -> String {
-        let start = node.positionAfterSkippingLeadingTrivia
-        let loc = converter.location(for: start)
-        return "\(filePath):\(loc.line):\(loc.column)"
-    }
-
     private func baseAttributesFlags(_ attrs: [String], modifiers: [String]) -> (isObjcExposed: Bool, isCoreData: Bool, isSwiftData: Bool, isFfi: Bool, ffiNames: [String]) {
         let set = Set(attrs.map { $0.lowercased() })
         let dyn = modifiers.map { $0.lowercased() }.contains("dynamic")
@@ -314,7 +307,6 @@ final class SymbolCollector: SyntaxVisitor {
             }
         }
 
-        let symbolID = symbolID(of: node)
         let qualName = qualTypeName(stack: typeStack.dropLast().map{$0}, currentType: node.name.text)
 
         let input = SymbolInput(
@@ -345,7 +337,7 @@ final class SymbolCollector: SyntaxVisitor {
             cross_module_refs: false
         )
 
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qualName, input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: qualName, input: input, decision: nil)
         decisions.classes.append(rec)
         return .visitChildren
     }
@@ -370,7 +362,6 @@ final class SymbolCollector: SyntaxVisitor {
         }
 
         let qualName = qualTypeName(stack: typeStack.dropLast().map{$0}, currentType: node.name.text)
-        let symbolID = symbolID(of: node)
 
         let input = SymbolInput(
             symbol_kind: "struct",
@@ -399,7 +390,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qualName, input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: qualName, input: input, decision: nil)
         decisions.structs.append(rec)
         return .visitChildren
     }
@@ -415,7 +406,6 @@ final class SymbolCollector: SyntaxVisitor {
         let conforms = inheritsFrom(node.inheritanceClause)
 
         let qualName = qualTypeName(stack: typeStack.dropLast().map{$0}, currentType: node.name.text)
-        let symbolID = symbolID(of: node)
 
         let input = SymbolInput(
             symbol_kind: "enum",
@@ -444,7 +434,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qualName, input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: qualName, input: input, decision: nil)
         decisions.enums.append(rec)
         return .visitChildren
     }
@@ -459,7 +449,6 @@ final class SymbolCollector: SyntaxVisitor {
         let access = accessLevel(from: node.modifiers)
 
         let qualName = qualTypeName(stack: typeStack.dropLast().map{$0}, currentType: node.name.text)
-        let symbolID = symbolID(of: node)
 
         let input = SymbolInput(
             symbol_kind: "protocol",
@@ -488,7 +477,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qualName, input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: qualName, input: input, decision: nil)
         decisions.protocols.append(rec)
         return .visitChildren
     }
@@ -504,7 +493,6 @@ final class SymbolCollector: SyntaxVisitor {
         let access = accessLevel(from: node.modifiers)
         let conforms = inheritsFrom(node.inheritanceClause)
         let qualName = qualTypeName(stack: typeStack.dropLast().map{$0}, currentType: nil)
-        let symbolID = symbolID(of: node)
 
         let input = SymbolInput(
             symbol_kind: "extension",
@@ -533,7 +521,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qualName, input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: qualName, input: input, decision: nil)
         decisions.extensions.append(rec)
         return .visitChildren
     }
@@ -550,7 +538,6 @@ final class SymbolCollector: SyntaxVisitor {
         let name = functionName(node)
         let qualBase = qualTypeName(stack: typeStack, currentType: nil)
         let qualName = (qualBase.isEmpty ? "" : "\(qualBase).") + name
-        let symbolID = symbolID(of: node)
 
         let bodySyntax: Syntax = node.body.map { Syntax($0) } ?? Syntax(node)
         let (calls, kps, sels, kvc, refs) = scanBodySignals(bodySyntax)
@@ -582,7 +569,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
         decisions.methods.append(rec)
         return .visitChildren
     }
@@ -595,7 +582,6 @@ final class SymbolCollector: SyntaxVisitor {
         let sig = initializerSignature(node)
 
         let qualName = qualTypeName(stack: typeStack, currentType: nil) + ".init"
-        let symbolID = symbolID(of: node)
 
         let bodySyntax: Syntax = node.body.map { Syntax($0) } ?? Syntax(node)
         let (calls, kps, sels, kvc, refs) = scanBodySignals(bodySyntax)
@@ -627,7 +613,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
         decisions.initializers.append(rec)
         return .visitChildren
     }
@@ -640,7 +626,6 @@ final class SymbolCollector: SyntaxVisitor {
         let sig = deinitializerSignature(node)
 
         let qualName = qualTypeName(stack: typeStack, currentType: nil) + ".deinit"
-        let symbolID = symbolID(of: node)
 
         let bodySyntax: Syntax = node.body.map { Syntax($0) } ?? Syntax(node)
         let (calls, kps, sels, kvc, refs) = scanBodySignals(bodySyntax)
@@ -672,7 +657,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
         decisions.deinitializers.append(rec)
         return .visitChildren
     }
@@ -685,7 +670,6 @@ final class SymbolCollector: SyntaxVisitor {
         let sig = subscriptSignature(node)
 
         let qualName = qualTypeName(stack: typeStack, currentType: nil) + ".subscript"
-        let symbolID = symbolID(of: node)
 
         let bodySyntax: Syntax = node.accessorBlock.map { Syntax($0) } ?? Syntax(node)
         let (calls, kps, sels, kvc, refs) = scanBodySignals(bodySyntax)
@@ -717,7 +701,7 @@ final class SymbolCollector: SyntaxVisitor {
             is_objc_exposed: isObjc,
             cross_module_refs: false
         )
-        let rec = SymbolRecord(symbol_id: symbolID, symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
+        let rec = SymbolRecord(symbol_name: "\(qualName)(\(sig))", input: input, decision: nil)
         decisions.subscripts.append(rec)
         return .visitChildren
     }
@@ -736,7 +720,6 @@ final class SymbolCollector: SyntaxVisitor {
             } else { return ([],[],[],[],[]) }
         }()
 
-        let symbolID = symbolID(of: node)
         let qualPrefix = qualTypeName(stack: typeStack, currentType: nil)
         let isGlobal = typeStack.isEmpty
         let kind = isGlobal ? "variable" : "property"
@@ -770,7 +753,7 @@ final class SymbolCollector: SyntaxVisitor {
                 is_objc_exposed: isObjc,
                 cross_module_refs: false
             )
-            let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qn, input: input, decision: nil)
+            let rec = SymbolRecord(symbol_name: qn, input: input, decision: nil)
             if isGlobal { decisions.variables.append(rec) } else { decisions.properties.append(rec) }
         }
         return .visitChildren
@@ -785,7 +768,6 @@ final class SymbolCollector: SyntaxVisitor {
         for elem in node.elements {
             let name = elem.name.text
             let qualName = qualTypeName(stack: typeStack, currentType: nil) + ".\(name)"
-            let symbolID = symbolID(of: node)
             let input = SymbolInput(
                 symbol_kind: "enumCase",
                 ast_path: ["SourceFile"] + typeStack.map { "\($0)Decl" } + ["EnumCaseDecl"],
@@ -813,7 +795,7 @@ final class SymbolCollector: SyntaxVisitor {
                 is_objc_exposed: isObjc,
                 cross_module_refs: false
             )
-            let rec = SymbolRecord(symbol_id: symbolID, symbol_name: qualName, input: input, decision: nil)
+            let rec = SymbolRecord(symbol_name: qualName, input: input, decision: nil)
             decisions.enumCases.append(rec)
         }
         return .visitChildren

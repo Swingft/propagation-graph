@@ -2,7 +2,6 @@ import itertools
 import time
 import config
 
-from gpt_handler import GPTHandler
 from claude_handler import ClaudeHandler
 from gemini_handler import GeminiHandler
 
@@ -32,7 +31,7 @@ def main():
     pattern_to_index = {pattern: i + 1 for i, pattern in enumerate(master_patterns)}
 
     start_index = 0
-    STOP_BEFORE = 1
+    STOP_BEFORE = 2
     combinations_to_run = all_combinations[start_index:]
 
     total_combinations = len(all_combinations)
@@ -52,14 +51,6 @@ def main():
 
         print(f"\n--- [{i}/{total_combinations}] 조합 처리 중: {filename_prefix} ---")
 
-        # GPT
-        # try:
-        #     print(f"🔹 GPT generating for {filename_prefix}...")
-        #     gpt_reply = GPTHandler.ask(prompt_config)
-        #     GPTHandler.save_and_upload(gpt_reply, swift_filename, drive_folder=f"gpt_generated/{filename_prefix}")
-        # except Exception as e:
-        #     print(f"❌ GPT error for {filename_prefix}: {e}")
-
         # Claude
         # try:
         #     print(f"🔹 Claude generating for {filename_prefix}...")
@@ -69,7 +60,7 @@ def main():
         # except Exception as e:
         #     print(f"❌ Claude error for {filename_prefix}: {e}")
 
-        # ✅ Gemini: 성공 시에만 저장/업로드. 실패하면 건너뛰고 다음 조합 진행.
+        # Gemini
         # try:
         #     print(f"🔹 Gemini generating for {filename_prefix}...")
         #     gemini_reply = GeminiHandler.ask(prompt_config, retries=5, base_wait=5)

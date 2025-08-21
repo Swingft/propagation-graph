@@ -3,9 +3,10 @@ import json
 import shutil
 from multiprocessing import Pool, cpu_count
 
+
 INPUT_ROOT_DIR = 'input_label'
 OUTPUT_ROOT_DIR = 'output_label'
-MODEL_SUB_DIRS = ['gpt_generated', 'claude_generated', 'gemini_generated']
+MODEL_SUB_DIRS = ['claude_generated', 'gemini_generated']
 
 SPLIT_INPUT_DIR = 'input_label_split'
 SPLIT_OUTPUT_ROOT_DIR = 'output_label_split'
@@ -54,7 +55,7 @@ def process_file_set(base_filename):
 
                 for key in POSSIBLE_KEYS:
                     if key in decisions_data and decisions_data[key]:
-                        # 분할된 파일에도 mapping과 data 구조를 유지
+
                         split_data_content = {
                             "meta": meta_data,
                             "decisions": {key: decisions_data[key]}
@@ -69,7 +70,7 @@ def process_file_set(base_filename):
                         with open(save_path, 'w', encoding='utf-8') as f:
                             json.dump(final_split_structure, f, ensure_ascii=False, indent=2)
 
-            # --- 2. 출력 파일 처리 (기존 로직 유지) ---
+            # --- 2. 출력 파일 처리 ---
             output_file_path = os.path.join(OUTPUT_ROOT_DIR, sub_dir, base_filename)
             if os.path.exists(output_file_path):
                 with open(output_file_path, 'r', encoding='utf-8') as f:
@@ -92,7 +93,6 @@ def main():
     """메인 실행 함수"""
     setup_directories()
 
-    # 모든 하위 디렉토리를 탐색하여 고유 파일 목록 수집
     all_base_filenames = set()
     for root_dir in [INPUT_ROOT_DIR, OUTPUT_ROOT_DIR]:
         if not os.path.isdir(root_dir): continue
