@@ -46,8 +46,8 @@ def main():
     .json 파일을 API에 요청으로 보내고, 결과를 저장 및 업로드하는 메인 함수.
     """
 
-    START_INDEX = 1
-    END_INDEX = 1
+    START_INDEX = 575
+    END_INDEX = None
 
     json_files = find_json_files()
     if not json_files:
@@ -99,33 +99,38 @@ def main():
 
 [CRITICAL] Final Output Rules: 1. Your response must be **only a valid JSON object**, with no explanations or extra text. 2. The output must start with `{{` and end with `}}`. 3. Absolutely do not add any introductory, concluding, or summary sentences like "Analysis result...", "These symbols are..." before or after the JSON."""
 
+            is_claude_file = 'claude_generated' in file_path
+            is_gemini_file = 'gemini_generated' in file_path
+
             # --- Claude 처리 로직 ---
-            try:
-                output_path_claude = os.path.join(OUTPUT_ROOT, 'claude_generated')
-                if os.path.exists(os.path.join(output_path_claude, output_filename)):
-                    print(f"⏭️ Claude 건너뛰기: 이미 파일이 존재합니다.")
-                else:
-                    print(f"🔹 Claude로 요청 전송 중...")
-                    claude_reply = ClaudeHandler.ask(full_prompt)
-                    drive_folder_claude = f"training_set/claude_generated/output/json/{drive_folder_suffix}"
-                    ClaudeHandler.save_and_upload(claude_reply, output_filename, drive_folder_claude, local_dir=output_path_claude)
-                    print(f"✅ Claude 처리 성공: {output_filename}")
-            except Exception as e:
-                print(f"❌ Claude 처리 오류 ({output_filename}): {e}")
+            if is_claude_file:
+                try:
+                    output_path_claude = os.path.join(OUTPUT_ROOT, 'claude_generated')
+                    if os.path.exists(os.path.join(output_path_claude, output_filename)):
+                        print(f"⏭️ Claude 건너뛰기: 이미 파일이 존재합니다.")
+                    else:
+                        print(f"🔹 Claude로 요청 전송 중...")
+                        claude_reply = ClaudeHandler.ask(full_prompt)
+                        drive_folder_claude = f"training_set/claude_generated/output/json/{drive_folder_suffix}"
+                        ClaudeHandler.save_and_upload(claude_reply, output_filename, drive_folder_claude, local_dir=output_path_claude)
+                        print(f"✅ Claude 처리 성공: {output_filename}")
+                except Exception as e:
+                    print(f"❌ Claude 처리 오류 ({output_filename}): {e}")
 
             # --- Gemini 처리 로직 ---
-            # try:
-            #     output_path_gemini = os.path.join(OUTPUT_ROOT, 'gemini_generated')
-            #     if os.path.exists(os.path.join(output_path_gemini, output_filename)):
-            #         print(f"⏭️ Gemini 건너뛰기: 이미 파일이 존재합니다.")
-            #     else:
-            #         print(f"🔹 Gemini로 요청 전송 중...")
-            #         gemini_reply = GeminiHandler.ask(full_prompt)
-            #         drive_folder_gemini = f"training_set/gemini_generated/output/json/{drive_folder_suffix}"
-            #         GeminiHandler.save_and_upload(gemini_reply, output_filename, drive_folder_gemini, local_dir=output_path_gemini)
-            #         print(f"✅ Gemini 처리 성공: {output_filename}")
-            # except Exception as e:
-            #     print(f"❌ Gemini 처리 오류 ({output_filename}): {e}")
+            # if is_gemini_file:
+            #     try:
+            #         output_path_gemini = os.path.join(OUTPUT_ROOT, 'gemini_generated')
+            #         if os.path.exists(os.path.join(output_path_gemini, output_filename)):
+            #             print(f"⏭️ Gemini 건너뛰기: 이미 파일이 존재합니다.")
+            #         else:
+            #             print(f"🔹 Gemini로 요청 전송 중...")
+            #             gemini_reply = GeminiHandler.ask(full_prompt)
+            #             drive_folder_gemini = f"training_set/gemini_generated/output/json/{drive_folder_suffix}"
+            #             GeminiHandler.save_and_upload(gemini_reply, output_filename, drive_folder_gemini, local_dir=output_path_gemini)
+            #             print(f"✅ Gemini 처리 성공: {output_filename}")
+            #     except Exception as e:
+            #         print(f"❌ Gemini 처리 오류 ({output_filename}): {e}")
 
             print(f"--- 파일 처리 완료, 12초 대기 ---")
             time.sleep(12)

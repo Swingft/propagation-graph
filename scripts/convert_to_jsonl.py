@@ -3,19 +3,20 @@ import multiprocessing
 from pathlib import Path
 
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
 PROCESSING_TASKS = [
     {
-        'input': Path('output_label_split'),
-        'output': Path('jsonl/output_label_split')
+        'input': PROJECT_ROOT / 'output_label_split',
+        'output': PROJECT_ROOT / 'jsonl/output_label_split'
     },
     {
-        'input': Path('input_label_split'),
-        'output': Path('jsonl/input_label_split')
+        'input': PROJECT_ROOT / 'input_label_split',
+        'output': PROJECT_ROOT / 'jsonl/input_label_split'
     }
 ]
-
 TARGET_FOLDERS = ['claude_generated', 'gemini_generated']
-
 CATEGORY_FOLDERS = [
     'classes', 'deinitializers', 'enumCases', 'enums', 'extensions',
     'initializers', 'methods', 'properties', 'protocols', 'structs',
@@ -26,33 +27,32 @@ CATEGORY_FOLDERS = [
 def convert_json_to_jsonl(task_info: tuple):
     """
     .json 파일을 .jsonl로 변환합니다.
-    - 첫 줄에는 meta 정보를 저장합니다.
-    - 이후 각 줄에는 'category' 정보가 추가된 심벌 객체를 저장합니다.
+    - input/output 두 가지 JSON 구조를 모두 처리합니다.
     """
     source_json_path, input_root, output_root = task_info
     try:
         relative_path = source_json_path.relative_to(input_root)
-
         output_dir = output_root / relative_path.parent
         output_dir.mkdir(parents=True, exist_ok=True)
-
         output_jsonl_path = output_dir / f"{source_json_path.stem}.jsonl"
 
         with open(source_json_path, 'r', encoding='utf-8') as f:
             full_data = json.load(f)
 
-        data_to_process = full_data.get('data', full_data)
-
         lines_to_write = []
+        symbol_container = None
 
-        # 1. meta 정보를 첫 줄로 추가
-        if 'meta' in data_to_process:
-            meta_line_obj = {'meta': data_to_process['meta']}
-            lines_to_write.append(json.dumps(meta_line_obj, ensure_ascii=False))
+        if 'data' in full_data and 'decisions' in full_data.get('data', {}):
+            # Input 파일 구조 처리
+            data_to_process = full_data['data']
+            if 'meta' in data_to_process:
+                lines_to_write.append(json.dumps({'meta': data_to_process['meta']}, ensure_ascii=False))
+            symbol_container = data_to_process.get('decisions', {})
+        else:
+            # Output 파일 구조 처리
+            symbol_container = full_data
 
-        # 2. 'decisions' 객체 안의 심벌들에 'category' 추가
-        if 'decisions' in data_to_process and isinstance(data_to_process['decisions'], dict):
-            symbol_container = data_to_process['decisions']
+        if isinstance(symbol_container, dict):
             for category, symbols in symbol_container.items():
                 if isinstance(symbols, list):
                     for symbol in symbols:
@@ -61,12 +61,14 @@ def convert_json_to_jsonl(task_info: tuple):
                             symbol_copy['category'] = category
                             lines_to_write.append(json.dumps(symbol_copy, ensure_ascii=False))
 
-        # 3. .jsonl 파일에 쓰기
+        if not lines_to_write:
+            return (str(source_json_path), True, "성공 (내용 없음)")
+
         with open(output_jsonl_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lines_to_write))
 
-        symbol_count = max(0, len(lines_to_write) - 1)
-        return (str(source_json_path), True, f"성공 (meta + {symbol_count}개 심벌)")
+        symbol_count = max(0, len(lines_to_write) - (1 if 'meta' in lines_to_write[0] else 0))
+        return (str(source_json_path), True, f"성공 (총 {symbol_count}개 심벌)")
 
     except Exception as e:
         return (str(source_json_path), False, f"오류: {e}")

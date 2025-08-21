@@ -1,16 +1,31 @@
-# gemini_handler.py
 import os
+import sys
 import time
+from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 from google.api_core import exceptions
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY_SH")
-if not API_KEY:
-    raise ValueError("GEMINI_API_KEY must be set in your .env file.")
-genai.configure(api_key=API_KEY)
+from google_drive_handler import GoogleDriveHandler
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
+dotenv_path = PROJECT_ROOT / '.env'
+load_dotenv(dotenv_path=dotenv_path)
+
+sys.path.append(str(SCRIPT_DIR))
+
+
+API_KEY_NAMES = [
+    "GEMINI_API_KEY_DH", "GEMINI_API_KEY_GN", "GEMINI_API_KEY_HJ",
+    "GEMINI_API_KEY_SH", "GEMINI_API_KEY_SI",
+]
+API_KEYS = [os.getenv(key_name) for key_name in API_KEY_NAMES if os.getenv(key_name)]
+if not API_KEYS:
+    raise ValueError("하나 이상의 GEMINI_API_KEY가 .env 파일에 설정되어야 합니다.")
 
 
 class GeminiResponseEmptyError(RuntimeError):
@@ -22,7 +37,10 @@ class GeminiBlockedError(RuntimeError):
 
 
 class GeminiHandler:
-    # 안전 설정을 가장 낮은 수준으로 조정
+    api_keys = API_KEYS
+    current_key_index = 0
+    model = None
+
     safety_settings = {
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -30,88 +48,81 @@ class GeminiHandler:
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
     }
 
-    model = genai.GenerativeModel("gemini-2.5-flash", safety_settings=safety_settings)
+    @classmethod
+    def _configure_genai(cls):
+        """현재 인덱스에 맞는 API 키로 genai와 모델을 설정합니다."""
+        if cls.current_key_index >= len(cls.api_keys):
+            raise RuntimeError("사용 가능한 모든 Gemini API 키가 소진되었습니다.")
+
+        current_key = cls.api_keys[cls.current_key_index]
+        print(f"🔑 Gemini API 키 #{cls.current_key_index + 1}로 설정 중...")
+        genai.configure(api_key=current_key)
+        cls.model = genai.GenerativeModel("gemini-2.5-flash", safety_settings=cls.safety_settings)
 
     @classmethod
     def ask(cls, prompt_config, retries: int = 3, base_wait: int = 5) -> str:
-        """
-        Gemini에 요청을 보내고 '정상 텍스트'가 있을 때만 문자열을 반환.
-        - 실패 시: 예외를 던짐 (저장/업로드 금지)
-        - 재시도 정책:
-            * ResourceExhausted(쿼터/속도 제한): 61초 대기 후 재시도
-            * 기타 오류/빈 응답/블록: 지수 백오프(5s, 10s, 20s ...)
-        """
+        if cls.model is None:
+            cls._configure_genai()
+
+        prompt_text = prompt_config if isinstance(prompt_config, str) else ""
         if isinstance(prompt_config, dict):
-            user_message = next(
-                (m for m in prompt_config.get("messages", []) if m.get("role") == "user"),
-                None,
-            )
+            user_message = next((m for m in prompt_config.get("messages", []) if m.get("role") == "user"), None)
             prompt_text = user_message["content"] if user_message else ""
-        else:
-            prompt_text = prompt_config
 
         last_err = None
         for attempt in range(1, retries + 1):
             try:
                 resp = cls.model.generate_content(prompt_text)
-
-                # ---- 유효성 검사 ----
-                # 1) 응답 텍스트가 비었는지
                 text = getattr(resp, "text", None)
                 if not text or not text.strip():
-                    # finish_reason이 STOP이 아니거나 candidates가 비었을 수 있음
-                    # prompt_feedback이 block인 경우도 있음
-                    # block 여부를 최대한 감지
                     pf = getattr(resp, "prompt_feedback", None)
                     if pf and getattr(pf, "block_reason", None) not in (None, 0, "BLOCK_REASON_UNSPECIFIED"):
-                        raise GeminiBlockedError(f"Blocked by safety: {pf.block_reason}")
-                    # candidates 존재 여부도 점검
+                        raise GeminiBlockedError(f"안전 설정에 의해 차단됨: {pf.block_reason}")
                     cands = getattr(resp, "candidates", None)
-                    fr = None
-                    if cands:
-                        fr = getattr(cands[0], "finish_reason", None)
-                    raise GeminiResponseEmptyError(f"Empty response (finish_reason={fr})")
-
-                return text  # ✅ 성공 시에만 문자열 반환
+                    fr = getattr(cands[0], "finish_reason", None) if cands else None
+                    raise GeminiResponseEmptyError(f"빈 응답 (finish_reason={fr})")
+                return text
 
             except exceptions.ResourceExhausted as e:
-                # 분당/일일 제한 등: 61초 대기 후 재시도
-                wait = 61
-                print(f"  ⚠️ Rate limit/quota hit. Retry in {wait}s... ({attempt}/{retries})")
-                time.sleep(wait)
-                last_err = e
+                print(f"  ⚠️ Gemini API 키 #{cls.current_key_index + 1}의 사용량 한도 도달. 키 전환 시도...")
+                cls.current_key_index += 1
+                if cls.current_key_index < len(cls.api_keys):
+                    cls._configure_genai()
+                    last_err = e
+                    continue
+                else:
+                    error_summary = str(e).split('\n')[0]
+                    raise RuntimeError(f"모든 Gemini API 키의 사용량 한도에 도달했습니다. 마지막 오류: {error_summary}")
+
             except (GeminiResponseEmptyError, GeminiBlockedError) as e:
-                # 텍스트 없음/블록: 점진적 백오프
                 wait = base_wait * (2 ** (attempt - 1))
-                print(f"  ⚠️ Empty/Blocked response. Retry in {wait}s... ({attempt}/{retries}) :: {e}")
+                print(f"  ⚠️ 비어 있거나 차단된 응답. {wait}초 후 재시도... ({attempt}/{retries}) :: {e}")
                 time.sleep(wait)
                 last_err = e
             except Exception as e:
-                # 기타 오류: 점진적 백오프
                 wait = base_wait * (2 ** (attempt - 1))
-                print(f"  ⚠️ Unexpected error. Retry in {wait}s... ({attempt}/{retries}) :: {e}")
+                print(f"  ⚠️ 예상치 못한 오류. {wait}초 후 재시도... ({attempt}/{retries}) :: {e}")
                 time.sleep(wait)
                 last_err = e
 
-        # 모든 재시도 실패 시 예외
-        raise RuntimeError(f"Gemini failed after {retries} retries: {last_err}")
-
+        raise RuntimeError(f"Gemini가 {retries}번의 재시도 후 실패했습니다: {last_err}")
 
     @staticmethod
-    def save_and_upload(content: str, filename: str, drive_folder: str, local_dir: str = "./data/gemini_generated"):
+    def save_and_upload(content: str, filename: str, drive_folder: str, local_dir: str):
         """
-        ✅ 성공 시에만 호출해야 함!
-        생성된 콘텐츠를 로컬에 저장하고, Google Drive에 업로드.
+        생성된 콘텐츠를 로컬에 저장하고 Google Drive에 업로드합니다.
         """
-        from google_drive_handler import GoogleDriveHandler  # 지연 임포트(실패 시 불필요한 의존 회피)
-
         os.makedirs(local_dir, exist_ok=True)
         filepath = os.path.join(local_dir, filename)
+
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"📄 Saved locally: {filepath}")
+        print(f"📄 로컬에 저장됨: {filepath}")
 
         try:
             GoogleDriveHandler.upload_to_drive(filepath, filename, folder_path=drive_folder)
         except Exception as e:
-            print(f"❌ Drive upload failed: {e}")
+            print(f"❌ Drive 업로드 실패: {e}")
+
+
+GeminiHandler._configure_genai()
