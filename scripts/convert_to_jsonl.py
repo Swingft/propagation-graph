@@ -2,7 +2,6 @@ import json
 import multiprocessing
 from pathlib import Path
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
@@ -27,7 +26,7 @@ CATEGORY_FOLDERS = [
 def convert_json_to_jsonl(task_info: tuple):
     """
     .json 파일을 .jsonl로 변환합니다.
-    - input/output 두 가지 JSON 구조를 모두 처리합니다.
+    - input 파일의 경우, mapping 정보를 meta 데이터에 포함시킵니다.
     """
     source_json_path, input_root, output_root = task_info
     try:
@@ -45,8 +44,19 @@ def convert_json_to_jsonl(task_info: tuple):
         if 'data' in full_data and 'decisions' in full_data.get('data', {}):
             # Input 파일 구조 처리
             data_to_process = full_data['data']
-            if 'meta' in data_to_process:
-                lines_to_write.append(json.dumps({'meta': data_to_process['meta']}, ensure_ascii=False))
+
+            # 1. 기존 meta 정보를 복사
+            meta_for_jsonl = data_to_process.get('meta', {}).copy()
+
+            # 2. 최상위 'mapping' 정보를 meta 객체 안으로 추가
+            if 'mapping' in full_data:
+                meta_for_jsonl['mapping'] = full_data['mapping']
+
+            # 3. 완성된 meta 객체를 첫 번째 라인으로 추가
+            if meta_for_jsonl:
+                lines_to_write.append(json.dumps({'meta': meta_for_jsonl}, ensure_ascii=False))
+
+            # 4. 심벌 데이터는 키 변환 없이 그대로 사용
             symbol_container = data_to_process.get('decisions', {})
         else:
             # Output 파일 구조 처리
@@ -67,7 +77,9 @@ def convert_json_to_jsonl(task_info: tuple):
         with open(output_jsonl_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lines_to_write))
 
-        symbol_count = max(0, len(lines_to_write) - (1 if 'meta' in lines_to_write[0] else 0))
+        # 메타 정보 라인을 제외하고 실제 심벌 수 계산
+        has_meta = lines_to_write and 'meta' in lines_to_write[0]
+        symbol_count = len(lines_to_write) - 1 if has_meta else len(lines_to_write)
         return (str(source_json_path), True, f"성공 (총 {symbol_count}개 심벌)")
 
     except Exception as e:
