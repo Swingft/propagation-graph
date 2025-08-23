@@ -58,6 +58,7 @@ def main():
         # os.path.join(scripts_dir, "generate_output_from_input.py"),
         # os.path.join(scripts_dir, "clean_output.py"),
         # os.path.join(scripts_dir, "split_labels_by_category.py"),
+        # os.path.join(scripts_dir, "verify_outputs.py"),
         # os.path.join(scripts_dir, "convert_to_jsonl.py"),
         # os.path.join(scripts_dir, "create_dataset.py"),
     ]
