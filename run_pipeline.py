@@ -59,7 +59,7 @@ def main():
         # os.path.join(scripts_dir, "clean_output.py"),
         # os.path.join(scripts_dir, "split_labels_by_category.py"),
         # os.path.join(scripts_dir, "convert_to_jsonl.py"),
-        os.path.join(scripts_dir, "create_dataset.py"),
+        # os.path.join(scripts_dir, "create_dataset.py"),
     ]
 
     print("====== 전체 데이터 처리 파이프라인 시작 ======")

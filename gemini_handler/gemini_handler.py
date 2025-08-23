@@ -21,7 +21,7 @@ sys.path.append(str(SCRIPT_DIR))
 
 API_KEY_NAMES = [
     "GEMINI_API_KEY_DH", "GEMINI_API_KEY_GN", "GEMINI_API_KEY_HJ",
-    "GEMINI_API_KEY_SH", "GEMINI_API_KEY_SI",
+    "GEMINI_API_KEY_SH", "GEMINI_API_KEY_SI", "GEMINI_API_KEY_BW"
 ]
 API_KEYS = [os.getenv(key_name) for key_name in API_KEY_NAMES if os.getenv(key_name)]
 if not API_KEYS:
@@ -119,10 +119,10 @@ class GeminiHandler:
             f.write(content)
         print(f"📄 로컬에 저장됨: {filepath}")
 
-        try:
-            GoogleDriveHandler.upload_to_drive(filepath, filename, folder_path=drive_folder)
-        except Exception as e:
-            print(f"❌ Drive 업로드 실패: {e}")
+        # try:
+        #     GoogleDriveHandler.upload_to_drive(filepath, filename, folder_path=drive_folder)
+        # except Exception as e:
+        #     print(f"❌ Drive 업로드 실패: {e}")
 
 
 GeminiHandler._configure_genai()

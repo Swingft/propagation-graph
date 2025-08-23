@@ -3,6 +3,10 @@ import json
 from multiprocessing import Pool, cpu_count
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+
+
 def process_file(file_path):
     """
     단일 JSON 파일을 처리하는 함수:
@@ -48,7 +52,8 @@ def main():
     """
     메인 함수: 대상 디렉토리에서 JSON 파일을 찾아 병렬로 처리합니다.
     """
-    root_dir = 'output_label'
+    # ⬇️ 프로젝트 루트를 기준으로 경로를 설정합니다. ⬇️
+    root_dir = os.path.join(PROJECT_ROOT, 'output_label')
     target_dirs = ['claude_generated', 'gemini_generated']
     file_paths = []
 

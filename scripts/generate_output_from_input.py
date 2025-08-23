@@ -3,7 +3,7 @@ import json
 import time
 import sys
 
-from claude_handler import ClaudeHandler
+# from claude_handler import ClaudeHandler
 from gemini_handler import GeminiHandler
 
 
@@ -46,8 +46,8 @@ def main():
     .json 파일을 API에 요청으로 보내고, 결과를 저장 및 업로드하는 메인 함수.
     """
 
-    START_INDEX = 575
-    END_INDEX = None
+    START_INDEX = 1
+    END_INDEX = 575
 
     json_files = find_json_files()
     if not json_files:
@@ -102,7 +102,7 @@ def main():
             is_claude_file = 'claude_generated' in file_path
             is_gemini_file = 'gemini_generated' in file_path
 
-            # --- Claude 처리 로직 ---
+            # --- Claude 처리 로직 --- 클로드가 생성 했지만 Output은 제미나이가 생성
             if is_claude_file:
                 try:
                     output_path_claude = os.path.join(OUTPUT_ROOT, 'claude_generated')
@@ -110,9 +110,9 @@ def main():
                         print(f"⏭️ Claude 건너뛰기: 이미 파일이 존재합니다.")
                     else:
                         print(f"🔹 Claude로 요청 전송 중...")
-                        claude_reply = ClaudeHandler.ask(full_prompt)
+                        claude_reply = GeminiHandler.ask(full_prompt)
                         drive_folder_claude = f"training_set/claude_generated/output/json/{drive_folder_suffix}"
-                        ClaudeHandler.save_and_upload(claude_reply, output_filename, drive_folder_claude, local_dir=output_path_claude)
+                        GeminiHandler.save_and_upload(claude_reply, output_filename, drive_folder_claude, local_dir=output_path_claude)
                         print(f"✅ Claude 처리 성공: {output_filename}")
                 except Exception as e:
                     print(f"❌ Claude 처리 오류 ({output_filename}): {e}")
@@ -133,7 +133,7 @@ def main():
             #         print(f"❌ Gemini 처리 오류 ({output_filename}): {e}")
 
             print(f"--- 파일 처리 완료, 12초 대기 ---")
-            time.sleep(12)
+            time.sleep(5)
 
         except json.JSONDecodeError:
             print(f"🚨 파일이 올바른 JSON 형식이 아닙니다. 건너뜁니다: {filename_base}")
