@@ -17,10 +17,10 @@ SPLIT_INPUT_DIR = PROJECT_ROOT / 'input_label_split'
 SPLIT_OUTPUT_DIR = PROJECT_ROOT / 'output_label_split'
 
 CONTEXT_MAP = {
-    'methods': ['classes', 'structs', 'enums', 'protocols', 'extensions', 'methods', 'initializers', 'deinitializers',
+    'methods': ['methods', 'initializers', 'deinitializers',
                 'subscripts', 'variables'],
-    'properties': ['classes', 'structs', 'enums', 'protocols', 'extensions', 'properties', 'variables', 'enumCases'],
-    'variables': ['classes', 'structs', 'enums', 'protocols', 'extensions', 'variables', 'properties', 'methods'],
+    'properties': ['properties'],
+    'variables': ['variables'],
     'initializers': ['classes', 'structs', 'enums', 'protocols', 'extensions', 'initializers'],
     'deinitializers': ['classes', 'structs', 'enums', 'protocols', 'extensions', 'deinitializers'],
     'subscripts': ['classes', 'structs', 'enums', 'protocols', 'extensions', 'subscripts'],

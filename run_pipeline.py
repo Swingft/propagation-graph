@@ -61,6 +61,7 @@ def main():
         # os.path.join(scripts_dir, "verify_outputs.py"),
         # os.path.join(scripts_dir, "convert_to_jsonl.py"),
         # os.path.join(scripts_dir, "create_dataset.py"),
+        # os.path.join(scripts_dir, "repair_dataset.py"),
     ]
 
     print("====== 전체 데이터 처리 파이프라인 시작 ======")
