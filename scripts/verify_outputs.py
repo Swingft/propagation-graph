@@ -13,11 +13,6 @@ INPUT_DIR = PROJECT_ROOT / 'input_label_split'
 OUTPUT_DIR = PROJECT_ROOT / 'output_label_split'
 
 MODEL_FOLDERS = ['claude_generated', 'gemini_generated']
-CATEGORY_FOLDERS = [
-    'classes', 'deinitializers', 'enumCases', 'enums', 'extensions',
-    'initializers', 'methods', 'properties', 'protocols', 'structs',
-    'subscripts', 'variables'
-]
 
 
 def clean_symbol_name(symbol_name: str) -> str:
@@ -32,9 +27,6 @@ def clean_symbol_name(symbol_name: str) -> str:
 
 def extract_selector_name(selector_str: str) -> str | None:
     """'#selector(processData(_:))' -> 'processData' 와 같이 셀렉터에서 순수 함수 이름을 추출합니다."""
-    # 중첩된 괄호가 포함된 복잡한 셀렉터(e.g., 클로저)도 처리할 수 있도록 정규식을 수정합니다.
-    # 변경 전: r'#selector\(([^)]+)\)'
-    # 변경 후: r'#selector\((.*)\)'
     match = re.search(r'#selector\((.*)\)', selector_str)
     if not match:
         return None
@@ -52,8 +44,10 @@ def verify_pair(task_info: tuple):
     input_path, output_path = task_info
 
     try:
+        # category는 이제 'methods_group' 과 같은 형태가 됩니다.
         category = input_path.parent.name
         base_name = input_path.stem.replace('input_', '')
+        # pattern_name 추출 로직은 '_group'이 추가되어도 잘 동작합니다.
         pattern_name = base_name.replace(f'_{category}', '')
     except Exception:
         category = "unknown"
@@ -129,14 +123,20 @@ def main():
     print("검증할 Input/Output 파일 쌍을 검색합니다...")
 
     for model_folder in MODEL_FOLDERS:
-        for category_folder in CATEGORY_FOLDERS:
-            input_category_path = INPUT_DIR / model_folder / category_folder
-            if not input_category_path.is_dir():
+        model_input_path = INPUT_DIR / model_folder
+        if not model_input_path.is_dir():
+            continue
+
+        # 'methods_group', 'classes_group' 등 모든 하위 디렉토리를 순회
+        for group_dir in model_input_path.iterdir():
+            if not group_dir.is_dir():
                 continue
 
-            for input_file in input_category_path.glob('input_*.json'):
-                base_name = input_file.name.replace('input_', 'output_')
-                output_file = OUTPUT_DIR / model_folder / category_folder / base_name
+            # 해당 그룹 디렉토리 내의 모든 input_*.json 파일을 찾음
+            for input_file in group_dir.glob('input_*.json'):
+                # 짝이 되는 output 파일 경로를 구성
+                output_filename = input_file.name.replace('input_', 'output_')
+                output_file = OUTPUT_DIR / model_folder / group_dir.name / output_filename
                 tasks.append((input_file, output_file))
 
     if not tasks:

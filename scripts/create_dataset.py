@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 BASE_DIR = PROJECT_ROOT / "jsonl"
@@ -13,130 +12,118 @@ FINAL_DATASET_FILE = PROJECT_ROOT / "alpaca_dataset.jsonl"
 NO_EXCLUSION_MESSAGE = "There are no identifiers that need to be excluded from obfuscation."
 
 
-def map_output_files(output_dir: str) -> Dict[str, str]:
+def map_output_files(output_dir: Path) -> Dict[str, Path]:
     """
-    output 디렉토리를 미리 스캔하여, 'output_' 뒷부분을 key로,
-    파일의 전체 경로를 value로 하는 딕셔너리(지도)를 생성합니다.
+    output 디렉토리를 스캔하여 'output_' 접두사를 제외한 나머지 부분을 key로,
+    파일의 전체 경로를 value로 하는 딕셔너리를 생성합니다.
     """
     file_map = {}
-    if not os.path.isdir(output_dir):
+    if not output_dir.is_dir():
         return file_map
 
-    for root, _, files in os.walk(output_dir):
-        for filename in files:
-            if filename.startswith("output_") and filename.endswith(".jsonl"):
-                key = filename[len("output"):]
-                file_map[key] = os.path.join(root, filename)
+    for file_path in output_dir.rglob("output_*.jsonl"):
+        key = file_path.name.replace("output_", "", 1)
+        file_map[key] = file_path
+
     print(f"Found and mapped {len(file_map)} output files.")
     return file_map
 
 
 def create_alpaca_dataset():
     """
-    'input_...'과 'output_...' 이름 규칙에 따라 파일을 매칭하고,
-    각 input 심벌에 mapping 정보를 포함하여 데이터셋을 생성합니다.
+    'input_*.jsonl' 파일 하나를 통째로 'input'으로, 'output_*.jsonl' 파일 하나를
+    통째로 'output'으로 하는 Alpaca 데이터셋 레코드를 생성합니다.
     """
-    if not os.path.isdir(INPUT_DIR):
+    if not INPUT_DIR.is_dir():
         print(f"Error: Input directory not found at '{INPUT_DIR}'")
         return
 
     all_records: List[Dict[str, str]] = []
     main_instruction = None
+    no_exclusion_count = 0  # Negative 샘플 카운터
+    files_processed = 0
 
     print("Mapping all output files first...")
     output_file_map = map_output_files(OUTPUT_DIR)
 
     print("Starting dataset creation...")
 
-    for root, _, files in os.walk(INPUT_DIR):
-        for filename in files:
-            if not (filename.startswith("input_") and filename.endswith(".jsonl")):
-                continue
+    for input_file_path in INPUT_DIR.rglob("input_*.jsonl"):
+        files_processed += 1
+        file_mapping = None
+        symbol_lines_data = []
 
-            input_file_path = Path(root) / filename
-
-            file_mapping = None
-            symbol_lines_data = []
-
-            # 1. 파일을 한번 스캔하여 meta(instruction, mapping) 정보와 심벌 데이터를 분리
-            try:
-                with open(input_file_path, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        try:
-                            data = json.loads(line)
-                            if 'meta' in data:
-                                if main_instruction is None and 'prompt_context' in data['meta']:
-                                    main_instruction = data['meta']['prompt_context']
-                                    print("Successfully extracted main instruction.")
-                                if 'mapping' in data['meta']:
-                                    file_mapping = data['meta']['mapping']
-                            else:
-                                symbol_lines_data.append(data)
-                        except json.JSONDecodeError:
-                            continue
-            except Exception as e:
-                print(f"Warning: Could not read {input_file_path}. Error: {e}")
-                continue
-
-            # instruction이나 mapping 정보가 없으면 해당 파일을 건너뜀
-            if not main_instruction:
-                print(f"Warning: Could not find instruction in {filename} or any previous file. Skipping.")
-                continue
-            if not file_mapping:
-                print(f"Warning: Could not find mapping in {filename}. Skipping.")
-                continue
-
-            # 2. 심벌 데이터와 output 파일을 매칭하여 최종 레코드 생성
-            file_suffix = filename[len("input"):]
-
-            # CASE 2: 매칭되는 출력 파일이 있는 경우
-            if file_suffix in output_file_map:
-                output_file_path = output_file_map[file_suffix]
-                print(f"Processing matched pair: {filename} -> {os.path.basename(output_file_path)}")
-                try:
-                    with open(output_file_path, 'r', encoding='utf-8') as f_out:
-                        output_lines_data = [json.loads(line) for line in f_out if line.strip()]
-
-                    if len(symbol_lines_data) != len(output_lines_data):
-                        print(f"Warning: Mismatch in line count for {filename}. Skipping.")
+        try:
+            with open(input_file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    try:
+                        data = json.loads(line)
+                        if 'meta' in data:
+                            if main_instruction is None and 'prompt_context' in data['meta']:
+                                main_instruction = data['meta']['prompt_context']
+                                print("Successfully extracted main instruction.")
+                            if 'mapping' in data['meta']:
+                                file_mapping = data['meta']['mapping']
+                        else:
+                            symbol_lines_data.append(data)
+                    except json.JSONDecodeError:
                         continue
+        except Exception as e:
+            print(f"Warning: Could not read {input_file_path}. Error: {e}")
+            continue
 
-                    for i, symbol_data in enumerate(symbol_lines_data):
-                        new_input_obj = {"mapping": file_mapping, "symbol_data": symbol_data}
+        if not main_instruction or not file_mapping:
+            print(f"Warning: Critical meta information missing in {input_file_path.name}. Skipping.")
+            continue
 
-                        formatted_output = json.dumps(output_lines_data[i], separators=(',', ':'))
+        new_input_obj = {
+            "mapping": file_mapping,
+            "symbols": symbol_lines_data  # 'symbol_data' -> 'symbols' (복수형), 리스트 전체를 할당
+        }
+        input_string = json.dumps(new_input_obj, ensure_ascii=False)
 
-                        alpaca_record = {
-                            "instruction": main_instruction,
-                            "input": json.dumps(new_input_obj, ensure_ascii=False),
-                            "output": formatted_output
-                        }
-                        all_records.append(alpaca_record)
+        output_string = ""
+        file_suffix = input_file_path.name.replace("input_", "", 1)
 
-                except Exception as e:
-                    print(f"Error processing file pair for {filename}. Error: {e}")
+        # Positive Sample 처리
+        if file_suffix in output_file_map:
+            output_file_path = output_file_map[file_suffix]
+            try:
+                with open(output_file_path, 'r', encoding='utf-8') as f_out:
+                    output_lines_data = [json.loads(line) for line in f_out if line.strip()]
+                # 전체 리스트를 하나의 JSON 문자열로 만듦
+                output_string = json.dumps(output_lines_data, ensure_ascii=False, separators=(',', ':'))
+            except Exception as e:
+                print(f"Error processing output file pair for {input_file_path.name}. Error: {e}")
+                continue
 
-            # CASE 1: 매칭되는 출력 파일이 없는 경우
-            else:
-                print(f"Info: Output file not found for '{filename}'. Using default message.")
-                for symbol_data in symbol_lines_data:
-                    new_input_obj = {"mapping": file_mapping, "symbol_data": symbol_data}
+        # Negative Sample 처리
+        else:
+            no_exclusion_count += 1
+            output_string = NO_EXCLUSION_MESSAGE
 
-                    alpaca_record = {
-                        "instruction": main_instruction,
-                        "input": json.dumps(new_input_obj, ensure_ascii=False),
-                        "output": NO_EXCLUSION_MESSAGE
-                    }
-                    all_records.append(alpaca_record)
+        # --- 💡 3. 파일 하나당 하나의 레코드 생성 ---
+        # symbol을 순회하는 루프가 없어지고, 파일당 한번만 레코드를 추가합니다.
+        alpaca_record = {
+            "instruction": main_instruction,
+            "input": input_string,
+            "output": output_string
+        }
+        all_records.append(alpaca_record)
 
-    # 모든 레코드를 최종 파일에 저장
     try:
         with open(FINAL_DATASET_FILE, 'w', encoding='utf-8') as f_final:
             for record in all_records:
                 f_final.write(json.dumps(record, ensure_ascii=False) + '\n')
 
+        matched_records = len(all_records) - no_exclusion_count
         print(f"\n✅ Done!")
-        print(f"Successfully created '{FINAL_DATASET_FILE}' with {len(all_records)} records.")
+        print(f"Processed {files_processed} input files to create {len(all_records)} records.")
+        print("-" * 55)
+        print(f"Successfully created '{FINAL_DATASET_FILE}'")
+        print(f"  - 📝 Matched Records (Positive Samples): {matched_records}")
+        print(f"  - 🤷‍♀️ Unmatched Records (Negative Samples): {no_exclusion_count}")
+        print("-" * 55)
 
     except IOError as e:
         print(f"Error writing to final dataset file '{FINAL_DATASET_FILE}'. Error: {e}")

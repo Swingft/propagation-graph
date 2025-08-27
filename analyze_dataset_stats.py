@@ -7,23 +7,19 @@ def analyze_directory_stats(target_dir_name: str):
     지정된 디렉토리 구조를 탐색하여 각 모델별 .jsonl 파일의
     총 개수, 평균 크기, 그리고 전체 통계를 계산하고 출력합니다.
     """
-    project_root = Path.cwd()
+    # 💡 1. 프로젝트 루트 경로 계산 수정
+    # 현재 스크립트가 있는 폴더를 프로젝트 루트로 가정합니다.
+    project_root = Path(__file__).resolve().parent
 
     target_root = project_root / 'jsonl' / target_dir_name
-
     model_folders = ['claude_generated', 'gemini_generated']
-
-    category_folders = [
-        'classes', 'deinitializers', 'enumCases', 'enums', 'extensions',
-        'initializers', 'methods', 'properties', 'protocols', 'structs',
-        'subscripts', 'variables'
-    ]
 
     print(f"\n\n===== '{target_root}' 디렉토리 분석 시작 =====")
     print("-" * 40)
 
     if not target_root.is_dir():
         print(f"🔥 오류: 대상 디렉토리를 찾을 수 없습니다: {target_root}")
+        print("💡 팁: 스크립트가 프로젝트 최상위 폴더에 있는지, 'jsonl' 폴더가 있는지 확인해주세요.")
         return
 
     stats_by_model = {}
@@ -38,13 +34,13 @@ def analyze_directory_stats(target_dir_name: str):
         total_files = 0
         total_size_bytes = 0
 
-        for category in category_folders:
-            category_path = model_path / category
-            if not category_path.is_dir():
+        # 💡 2. 모델 폴더 내부의 그룹 폴더들을 동적으로 탐색하는 로직 (이전 수정 사항 유지)
+        # 이 부분은 이미 올바르게 수정되어 있습니다.
+        for group_dir in model_path.iterdir():
+            if not group_dir.is_dir():
                 continue
 
-            jsonl_files = list(category_path.glob('*.jsonl'))
-
+            jsonl_files = list(group_dir.glob('*.jsonl'))
             total_files += len(jsonl_files)
             for file_path in jsonl_files:
                 total_size_bytes += file_path.stat().st_size
@@ -58,7 +54,7 @@ def analyze_directory_stats(target_dir_name: str):
         grand_total_size_bytes += total_size_bytes
 
     print("📊 분석 결과:")
-    if not stats_by_model:
+    if not stats_by_model or grand_total_files == 0:
         print("분석할 파일을 찾지 못했습니다. 디렉토리 구조를 확인해주세요.")
         return
 
