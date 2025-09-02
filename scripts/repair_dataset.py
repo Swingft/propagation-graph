@@ -7,7 +7,7 @@ from datasets import load_dataset
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-FINAL_DATASET_FILE = PROJECT_ROOT / "alpaca_dataset.jsonl"
+FINAL_DATASET_FILE = PROJECT_ROOT / "eval.jsonl"
 REPAIRED_DATASET_FILE = PROJECT_ROOT / "alpaca_repaired.jsonl"
 
 

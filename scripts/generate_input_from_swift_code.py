@@ -14,7 +14,6 @@ ANALYZER_DIR = PROJECT_ROOT / "SwiftASTAnalyzer"
 TARGET_DATA_ROOT = PROJECT_ROOT / "data"
 OUTPUT_ROOT = PROJECT_ROOT / "input_label"
 
-
 NEW_PROMPT_CONTEXT = """Your Role: You are an expert static analysis assistant with a deep understanding of Swift's semantic structure. Your mission is to meticulously analyze the provided symbol information to identify which symbols must have their names preserved during code obfuscation and to clearly justify your reasoning.
 
 Input Data:
@@ -93,6 +92,7 @@ KEY_MAPPING = {
     "conforms": "p21"
 }
 
+
 def build_analyzer(analyzer_dir: Path) -> Path:
     """SwiftASTAnalyzer를 릴리즈 모드로 빌드하고 실행 파일 경로를 반환합니다."""
     print("🚀 SwiftASTAnalyzer 빌드를 시작합니다...")
@@ -111,16 +111,24 @@ def build_analyzer(analyzer_dir: Path) -> Path:
     return analyzer_bin
 
 
-def find_swift_files(root: Path, target_dirs: List[str]) -> List[Path]:
-    """지정된 디렉토리 내 모든 .swift 파일을 검색합니다."""
-    print("🔎 Swift 파일을 검색합니다...")
+def find_swift_files(root: Path) -> List[Path]:
+    """
+    지정된 루트 디렉토리 아래의 모든 프로젝트 폴더에서 .swift 파일을 검색합니다.
+    """
+    print(f"🔎 '{root}' 디렉토리에서 Swift 프로젝트들을 검색합니다...")
     swift_files = []
-    for dir_name in target_dirs:
-        search_path = root / dir_name
-        if search_path.is_dir():
-            files_found = list(search_path.rglob("*.swift"))
-            swift_files.extend(files_found)
-            print(f"   - '{search_path}'에서 {len(files_found)}개의 파일을 찾았습니다.")
+    # 루트 디렉토리 바로 아래에 있는 모든 하위 폴더를 프로젝트로 간주하고 순회합니다.
+    project_dirs = [d for d in root.iterdir() if d.is_dir()]
+
+    if not project_dirs:
+        print("   - 경고: 검색할 프로젝트 폴더가 없습니다.")
+        return []
+
+    for project_path in project_dirs:
+        files_found = list(project_path.rglob("*.swift"))
+        swift_files.extend(files_found)
+        print(f"   - '{project_path.name}' 프로젝트에서 {len(files_found)}개의 파일을 찾았습니다.")
+
     print(f"✨ 총 {len(swift_files)}개의 Swift 파일을 찾았습니다.")
     return swift_files
 
@@ -154,7 +162,10 @@ def analyze_single_file(
 ):
     """단일 Swift 파일을 분석하고, 키 간결화 및 정리를 수행한 후 JSON으로 저장합니다."""
     try:
+        # data_root를 기준으로 상대 경로를 계산하여 프로젝트 구조를 유지합니다.
         relative_path = swift_file.relative_to(data_root)
+
+        # 출력 경로에 프로젝트 폴더 구조를 그대로 반영합니다.
         output_dir = output_root / relative_path.parent
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / f"input_{swift_file.stem}.json"
@@ -223,8 +234,8 @@ def main():
         print(f"🔥 빌드 실패: {e}")
         return
 
-    target_dirs_to_scan = ["claude_generated", "gemini_generated"]
-    swift_files = find_swift_files(TARGET_DATA_ROOT, target_dirs_to_scan)
+    # 더 이상 특정 폴더 이름을 하드코딩하지 않고, TARGET_DATA_ROOT를 직접 전달합니다.
+    swift_files = find_swift_files(TARGET_DATA_ROOT)
     if not swift_files:
         print("⚠️ 분석할 Swift 파일이 없습니다. 스크립트를 종료합니다.")
         return

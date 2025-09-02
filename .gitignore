@@ -15,8 +15,21 @@ output_label/
 output_label_split/
 input_label_split/
 jsonl/
-alpaca_dataset.jsonl
+eval.jsonl
 alpaca_repaired.jsonl
+deepseek-coder-finetuned-16k/
+run.py
+temp/
+deepseek-coder-merged-16k/
+coreml_models/
+runPad/
+scripts/convert_to_model_coreml.py
+scripts/evaluate_model.py
+
+
+
+
+
 
 
 

@@ -8,7 +8,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 BASE_DIR = PROJECT_ROOT / "jsonl"
 INPUT_DIR = BASE_DIR / "input_label_split"
 OUTPUT_DIR = BASE_DIR / "output_label_split"
-FINAL_DATASET_FILE = PROJECT_ROOT / "alpaca_dataset.jsonl"
+FINAL_DATASET_FILE = PROJECT_ROOT / "eval.jsonl"
 NO_EXCLUSION_MESSAGE = "There are no identifiers that need to be excluded from obfuscation."
 
 
