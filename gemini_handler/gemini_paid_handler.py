@@ -48,7 +48,7 @@ class GeminiHandler:
             return "오류가 발생하여 답변을 생성하지 못했습니다."
 
     @staticmethod
-    def save_and_upload(content: str, filename: str, drive_folder: str, local_dir: str = "./data/gemini_generated"):
+    def save_and_upload(content: str, filename: str, drive_folder: str, local_dir: str = "./nC1/gemini_generated2"):
         """생성된 콘텐츠를 로컬에 저장하고 Google Drive에 업로드합니다."""
         os.makedirs(local_dir, exist_ok=True)
         filepath = os.path.join(local_dir, filename)

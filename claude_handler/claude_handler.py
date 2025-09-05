@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import anthropic
 
-from google_drive_handler import GoogleDriveHandler
+# from google_drive_handler import GoogleDriveHandler
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent

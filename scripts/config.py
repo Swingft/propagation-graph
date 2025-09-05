@@ -1,12 +1,20 @@
 import json
 import copy
+
 # --- 1. Master list of patterns and their detailed code examples ---
 
+# 총 19개의 패턴 (기존 15개 + 신규 4개)
 OBFUSCATION_EXCLUSION_PATTERNS = [
+    # Original Patterns
     "objc_selector", "runtime_reflection", "keypath_usage", "codable_synthesis",
     "swiftui_property_wrapper", "coredata_nsmanaged", "ffi_entry", "dynamic_dispatch",
     "protocol_requirement", "extension_disambiguation", "resource_binding",
-    "stringly_typed_api", "external_contract", "ui_state_wrapper", "concurrency_attr"
+    "stringly_typed_api", "external_contract", "ui_state_wrapper", "concurrency_attr",
+    # New, more complex patterns
+    "convention_based_string_key",
+    "external_system_integration",
+    "test_runner_discovery",
+    "third_party_dynamic_features"
 ]
 
 PATTERN_EXAMPLES = {
@@ -29,7 +37,7 @@ PATTERN_EXAMPLES = {
     view.addGestureRecognizer(tapGesture)
 
     // Example 5: Calling a selector with an argument
-    let selectorWithArg = #selector(process(data:))
+    let selectorWithArg = #selector(process(nC1:))
     perform(selectorWithArg, with: "SomeData")
 
     // Example 6: Creating a selector from a string literal (difficult for static analysis)
@@ -228,7 +236,7 @@ PATTERN_EXAMPLES = {
     // Example 6: Generic types with Codable
     struct APIResponse<T: Codable>: Codable {
         var status: String
-        var data: T
+        var nC1: T
     }
 
     // Example 7: Manual array handling using unkeyedContainer
@@ -389,8 +397,8 @@ PATTERN_EXAMPLES = {
     }
 
     // Example 8: C union type
-    var data = CUnionData()
-    data.intValue = 123
+    var nC1 = CUnionData()
+    nC1.intValue = 123
 
     // Example 9: Opaque pointers (handles to hidden C objects)
     let handle = create_c_object()
@@ -561,15 +569,15 @@ PATTERN_EXAMPLES = {
     // let image = R.image.profileIcon()
     // let color = R.color.primaryColor()
 
-    // Example 5: Loading data from a Plist file
+    // Example 5: Loading nC1 from a Plist file
     var config: [String: Any]?
     if let path = Bundle.main.path(forResource: "Config", ofType: "plist") {
         config = NSDictionary(contentsOfFile: path) as? [String: Any]
     }
 
     // Example 6: Loading and decoding a local JSON file
-    if let url = Bundle.main.url(forResource: "data", withExtension: "json") {
-        let data = try? Data(contentsOf: url)
+    if let url = Bundle.main.url(forResource: "nC1", withExtension: "json") {
+        let nC1 = try? Data(contentsOf: url)
         // ... then decode with JSONDecoder
     }
 
@@ -640,7 +648,7 @@ PATTERN_EXAMPLES = {
     // This breaks if the server changes 'name' to 'username'
 
     // Example 4: Webview and JavaScript interface
-    // webView.evaluateJavaScript("myJSFunction('data from swift')")
+    // webView.evaluateJavaScript("myJSFunction('nC1 from swift')")
 
     // Example 5: Inter-app communication via URL Schemes
     // UIApplication.shared.open(URL(string: "otherapp://action?id=123")!)
@@ -648,12 +656,12 @@ PATTERN_EXAMPLES = {
     // Example 6: Shared UserDefaults via App Groups
     // let sharedDefaults = UserDefaults(suiteName: "group.com.myapp.shared")
 
-    // Example 7: Shared Keychain data
+    // Example 7: Shared Keychain nC1
     // KeychainWrapper.standard.set("secret", forKey: "apiToken")
 
     // Example 8: Bluetooth LE (BLE) communication protocol
     // let serviceUUID = CBUUID(string: "1234")
-    // peripheral.writeValue(data, for: characteristic, type: .withResponse)
+    // peripheral.writeValue(nC1, for: characteristic, type: .withResponse)
 
     // Example 9: Push notification payload
     // let aps = payload["aps"] as? [String: Any]
@@ -779,11 +787,284 @@ PATTERN_EXAMPLES = {
 
     @MyGlobalActor
     func doSomethingOnGlobalActor() {}
+    """,
+
+    # 16. Convention-based String Keys
+    "convention_based_string_key": """
+    import Foundation
+    import CoreData
+    import UIKit
+
+    // Example 1: UserDefaults key tied to a property name by convention
+    // The string "userSessionToken" is implicitly linked to a conceptual session token.
+    UserDefaults.standard.set("abc-123", forKey: "userSessionToken")
+
+    // Example 2: Core Animation key path string
+    // "backgroundColor" must match a property on CALayer.
+    let colorAnimation = CABasicAnimation(keyPath: "backgroundColor")
+
+    // Example 3: Analytics event and parameter names
+    // "user_profile_viewed" and "source" are critical for nC1 analysis platforms.
+    Analytics.log("user_profile_viewed", parameters: ["source": "notification"])
+
+    // Example 4: Custom Font Name
+    // "AvenirNext-DemiBold" must match the exact font name registered with the system.
+    let titleFont = UIFont(name: "AvenirNext-DemiBold", size: 18)
+
+    // Example 5: Feature Flag key
+    // The string "enable-new-dashboard" controls a feature's availability.
+    if FeatureFlags.isEnabled("enable-new-dashboard") { /* show new UI */ }
+
+    // Example 6: Custom Dependency Injection container using string keys
+    // "network_service_main" is a key to resolve a specific registered instance.
+    let networkService = container.resolve(NetworkService.self, key: "network_service_main")
+
+    // Example 7: A/B Testing variant key
+    // The string identifies which experiment to check.
+    let buttonColor = ABTesting.variant(for: "home_screen_cta_color_test")
+
+    // Example 8: Theme manager using string identifiers for assets
+    // "primaryBackgroundColor" must exist in the theme definition dictionary.
+    let backgroundColor = Theme.current.color(named: "primaryBackgroundColor")
+
+    // Example 9: Raw NSPredicate format string in CoreData
+    // "isCompleted" and "dueDate" are property names of a CoreData entity.
+    let predicate = NSPredicate(format: "isCompleted == NO AND dueDate < %@", Date() as NSDate)
+
+    // Example 10: In-App Purchase product identifier
+    // "com.myapp.annual.subscription" must match the ID in App Store Connect.
+    let request = SKProductsRequest(productIdentifiers: ["com.myapp.annual.subscription"])
+    """,
+
+    # 17. External System Integration
+    "external_system_integration": """
+    import Foundation
+    import UIKit
+    import WebKit
+    import CoreSpotlight
+
+    // Example 1: Info.plist `NSExtensionPrincipalClass`
+    // The class name "com.myapp.TodayWidget.WidgetViewController" is specified in Info.plist.
+    class WidgetViewController: UIViewController { /* ... */ }
+
+    // Example 2: Storyboard ID for UIViewController instantiation
+    // The identifier "UserDetailVC" is set in the Storyboard's Identity Inspector.
+    let userDetailVC = storyboard.instantiateViewController(withIdentifier: "UserDetailVC")
+
+    // Example 3: WKWebView JavaScript message handler name
+    // JavaScript code will call `window.webkit.messageHandlers.appInterface.postMessage(...)`
+    let webViewConfig = WKWebViewConfiguration()
+    webViewConfig.userContentController.add(self, name: "appInterface")
+
+    // Example 4: Custom URL Scheme handling in AppDelegate
+    // The app is launched with a URL like "myapp://user/profile?id=123"
+    func application(_ app: UIApplication, open url: URL, options: ...) -> Bool {
+        guard url.scheme == "myapp", url.host == "user" else { return false }
+        // ... logic driven by string components ...
+        return true
+    }
+
+    // Example 5: Handoff activity type defined in Info.plist (NSUserActivityTypes)
+    // The string must match one of the values in the plist array.
+    let activity = NSUserActivity(activityType: "com.myapp.view-document")
+    activity.becomeCurrent()
+
+    // Example 6: Siri Intent class name
+    // "ViewProfileIntent" is the name of a class generated from an .intentdefinition file.
+    // Obfuscating this class name breaks the shortcut.
+    class ViewProfileIntentHandler: NSObject, ViewProfileIntentHandling { /* ... */ }
+
+    // Example 7: Shared App Group container identifier for nC1 sharing
+    // "group.com.myapp.shared" enables nC1 access between the main app and extensions.
+    let sharedDefaults = UserDefaults(suiteName: "group.com.myapp.shared")
+
+    // Example 8: Push notification payload key-value parsing
+    // Keys like "aps", "alert", and "custom_event_id" come from an external server.
+    func handleNotification(_ userInfo: [AnyHashable: Any]) {
+        if let aps = userInfo["aps"] as? [String: Any],
+           let alert = aps["alert"] as? String { /* ... */ }
+    }
+
+    // Example 9: Core Spotlight searchable item attributes
+    // kUTTypeItem and other keys are string constants defined by the framework.
+    let attributeSet = CSSearchableItemAttributeSet(itemContentType: kUTTypeItem as String)
+    attributeSet.title = "My Searchable Item"
+
+    // Example 10: Registering a custom URLProtocol subclass by name
+    // The class "MyCustomURLProtocol" is registered to handle specific network requests.
+    URLProtocol.registerClass(MyCustomURLProtocol.self)
+    """,
+
+    # 18. Test Runner Discovery
+    "test_runner_discovery": """
+    import XCTest
+
+    // A hypothetical class being tested
+    class Calculator {
+        func add(_ a: Int, _ b: Int) -> Int { a + b }
+    }
+
+    // Example 1: Standard XCTest method with 'test' prefix
+    class MyTests: XCTestCase {
+        func testCalculator_add_returnsCorrectSum() {
+            XCTAssertEqual(Calculator().add(2, 3), 5)
+        }
+    }
+
+    // Example 2: Per-test setup and teardown methods
+    // `setUp` and `tearDown` are called automatically by the test runner.
+    class TestWithSetup: XCTestCase {
+        var calculator: Calculator!
+        override func setUp() {
+            super.setUp()
+            calculator = Calculator()
+        }
+        override func tearDown() {
+            calculator = nil
+            super.tearDown()
+        }
+    }
+
+    // Example 3: Async test method in modern XCTest
+    // The runner discovers and awaits this async function.
+    class AsyncTests: XCTestCase {
+        func testAsyncOperation_completesSuccessfully() async throws {
+            // ...
+        }
+    }
+
+    // Example 4: Performance testing method
+    // `measure` blocks are specifically handled by the test runner.
+    class PerformanceTests: XCTestCase {
+        func testPerformanceOfAdding() {
+            self.measure {
+                _ = Calculator().add(100, 200)
+            }
+        }
+    }
+
+    // Example 5: A hypothetical custom test runner looking for a specific attribute
+    // @Testable is a custom attribute a special runner might look for.
+    @objc protocol Testable {}
+    class CustomRunnerTests: XCTestCase, Testable {
+        @objc func myCustomTest() { /* ... */ }
+    }
+
+
+    // Example 6: Overriding `defaultTestSuite` for custom test discovery
+    // A sophisticated way to control which tests are run.
+    class CustomSuiteTests: XCTestCase {
+        override class var defaultTestSuite: XCTestSuite {
+            let suite = XCTestSuite(forTestCaseClass: CustomSuiteTests.self)
+            // Logic to dynamically create tests from non-standard names
+            return suite
+        }
+    }
+
+    // Example 7: Snapshot testing where the test name infers the snapshot file name
+    // Obfuscating `testUserProfileHeader` would break filename-based snapshot matching.
+    class SnapshotTests: XCTestCase {
+        func testUserProfileHeader() {
+            // let view = UserProfileHeaderView()
+            // assertSnapshot(matching: view, as: .image)
+        }
+    }
+
+    // Example 8: UI Test launch arguments that configure the app state
+    // The string "-reset-database" is checked by the app during a UI test run.
+    class MyUITests: XCTestCase {
+        func testSomething() {
+            let app = XCUIApplication()
+            app.launchArguments = ["-reset-database"]
+            app.launch()
+        }
+    }
+
+    // Example 9: Asynchronous setup with `setUp` that has a completion handler
+    // Older style of async setup, still discovered by the runner.
+    class LegacyAsyncSetupTests: XCTestCase {
+        override func setUp(completion: @escaping (Error?) -> Void) {
+            // ... async setup ...
+            completion(nil)
+        }
+    }
+
+    // Example 10: A hypothetical benchmark runner finding methods by prefix
+    // A custom tool could scan for all methods starting with `benchmark_`
+    class MyBenchmarks: XCTestCase {
+        func benchmark_heavyComputation() { /* ... */ }
+    }
+    """,
+
+    # 19. Third-Party Dynamic Features
+    "third_party_dynamic_features": """
+    import Foundation
+    // Assume library imports for Swinject, Realm, Firebase, etc.
+
+    // Example 1: Swinject (DI) with named registration
+    // The string "api" is used to differentiate between two implementations.
+    // container.register(NetworkClient.self, name: "api") { _ in APINetworkClient() }
+    // container.register(NetworkClient.self, name: "mock") { _ in MockNetworkClient() }
+
+    // Example 2: Realm (ORM) where class name maps to table name
+    // The "UserSession" class name becomes the table name in the database.
+    // class UserSession: Object { @Persisted var token: String }
+
+    // Example 3: Firebase Firestore using Codable for nC1 serialization
+    // Property names "userId" and "lastLogin" become field names in the Firestore document.
+    struct UserDTO: Codable { let userId: String; let lastLogin: Date }
+    // db.collection("users").document("123").setData(from: UserDTO(...))
+
+    // Example 4: GraphQL (Apollo) where Swift properties match schema fields
+    // `name` and `email` must match the fields in the GraphQL query.
+    // struct UserDetails: GraphQLSelectionSet {
+    //     var name: String
+    //     var email: String
+    // }
+
+    // Example 5: Plugin architecture using `NSClassFromString`
+    // The app loads a plugin class whose name is stored in a config file.
+    let pluginClassName = "com.mycompany.plugins.AdvancedRenderer"
+    if let pluginClass = NSClassFromString(pluginClassName) as? Plugin.Type {
+        let plugin = pluginClass.init()
+    }
+
+    // Example 6: React Native bridge exposing a method to JavaScript
+    // `@objc` and the method name `processPayment` must be preserved.
+    @objc(PaymentProcessor)
+    class PaymentProcessor: NSObject {
+        @objc func processPayment(_ nC1: [String: Any], resolver: @escaping RCTPromiseResolveBlock) {
+            // ...
+        }
+    }
+
+    // Example 7: A JSON-RPC server mapping string methods to functions
+    // A request with `{"method": "getUserProfile"}` would need to be routed to a real function.
+    rpcServer.register(method: "getUserProfile") { (params: [String: Any]) in
+        // ...
+    }
+
+    // Example 8: Analytics wrapper using Mirror to log event properties automatically
+    // The property name "source" of the event struct is used as the analytics parameter key.
+    struct UserDidLoginEvent { let source: String }
+    // log(event: UserDidLoginEvent(source: "password_form"))
+
+    // Example 9: A custom router that navigates based on string paths
+    // The string "/user/profile/123" is parsed to find a view controller.
+    // router.navigate(to: "/user/profile/123")
+
+    // Example 10: Dynamic decoding with a library like ObjectMapper
+    // The string key "created_at" is mapped to the `createdAt` property.
+    // class User: Mappable {
+    //     var createdAt: Date?
+    //     func mapping(map: Map) {
+    //         createdAt <- (map["created_at"], DateTransform())
+    //     }
+    // }
     """
 }
 
-# --- 1. API가 요구하는 최종 프롬프트의 '껍데기' 구조 ---
-# user의 content는 API 규격에 따라 반드시 '문자열'이어야 하므로, 비워둡니다.
+# --- 2. API가 요구하는 최종 프롬프트의 '껍데기' 구조 ---
 BASE_PROMPT_STRUCTURE = {
     "messages": [
         {
@@ -792,13 +1073,12 @@ BASE_PROMPT_STRUCTURE = {
         },
         {
             "role": "user",
-            "content": ""  # <--- 최종적으로 완성된 JSON 문자열이 들어갈 자리
+            "content": ""
         }
     ]
 }
 
-# --- 2. 'content'에 들어갈 내용물의 '틀'을 파이썬 딕셔너리로 정의 ---
-# 이 방식은 JSON 문법 오류를 원천적으로 방지합니다.
+# --- 3. 'content'에 들어갈 내용물의 '틀'을 파이썬 딕셔너리로 정의 ---
 USER_CONTENT_TEMPLATE = {
     "task": f"Here is a list of major patterns that complicate Swift obfuscation analysis: {json.dumps(OBFUSCATION_EXCLUSION_PATTERNS)}. From this list, organically combine the patterns specified in the `parameters.patterns` array to generate a single, complex, and syntactically valid Swift source code file. Refer to the `examples` below to understand the meaning of each pattern and how to combine them.",
     "parameters": {
@@ -812,7 +1092,7 @@ USER_CONTENT_TEMPLATE = {
         },
         {
             "constraint": "Deeply interwoven logical structure",
-            "description": "Do not merely list patterns in sequence. Interweave patterns to create complex call graphs and logical dependencies. For example, a class that uses `dynamic_dispatch` has its state managed by a `swiftui_property_wrapper`, and that class processes data decoded via `codable_synthesis`."
+            "description": "Do not merely list patterns in sequence. Interweave patterns to create complex call graphs and logical dependencies. For example, a class that uses `dynamic_dispatch` has its state managed by a `swiftui_property_wrapper`, and that class processes nC1 decoded via `codable_synthesis`."
         },
         {
             "constraint": "Creative and non-obvious combinations",
@@ -842,92 +1122,49 @@ USER_CONTENT_TEMPLATE = {
 }
 
 
-# --- 3. 딕셔너리를 직접 조작하여 최종 프롬프트를 완성하는 함수 ---
+# --- 4. 딕셔너리를 직접 조작하여 최종 프롬프트를 완성하는 함수 ---
 def create_prompt_config(selected_patterns: list) -> dict:
     """
     두 개의 딕셔너리 템플릿을 조합하여, API 규격에 맞는
-    최종 프롬프트 딕셔ner리를 안전하게 생성합니다.
+    최종 프롬프트 딕셔너리를 안전하게 생성합니다.
     """
-    # 1. 최종 프롬프트의 껍데기를 복사합니다.
     final_prompt = copy.deepcopy(BASE_PROMPT_STRUCTURE)
-
-    # 2. 내용물의 틀을 복사합니다.
     user_content = copy.deepcopy(USER_CONTENT_TEMPLATE)
 
-    # 3. 내용물의 동적인 부분을 채웁니다.
+    valid_patterns = [p for p in selected_patterns if p in OBFUSCATION_EXCLUSION_PATTERNS]
     examples_to_include = {
         pattern: PATTERN_EXAMPLES.get(pattern, "No example available.")
-        for pattern in selected_patterns
+        for pattern in valid_patterns
     }
-    user_content["parameters"]["patterns"] = selected_patterns
+    user_content["parameters"]["patterns"] = valid_patterns
     user_content["examples"] = examples_to_include
 
-    # 4. 완성된 내용물(딕셔너리)을 JSON 문자열로 변환합니다.
     content_string = json.dumps(user_content, indent=2)
-
-    # 5. 이 문자열을 껍데기의 content 자리에 끼워 넣습니다.
     final_prompt["messages"][1]["content"] = content_string
 
     return final_prompt
 
 
+# --- 사용 예시 ---
+if __name__ == '__main__':
+    # 전체 19개 패턴 중 테스트할 조합을 자유롭게 선택
+    patterns_to_test = [
+        "codable_synthesis",
+        "third_party_dynamic_features",
+        "objc_selector",
+        "external_system_integration",
+        "convention_based_string_key",
+        "swiftui_property_wrapper",
+        "test_runner_discovery"
+    ]
 
+    final_prompt_dictionary = create_prompt_config(patterns_to_test)
 
+    # 생성된 최종 프롬프트를 JSON 문자열로 변환 (API 전송용)
+    final_json_string = json.dumps(final_prompt_dictionary, indent=2)
 
+    # 결과를 화면에 출력하거나 파일로 저장
+    # print(final_json_string)
 
-
-
-# PROMPT_TEMPLATE = """
-# {{
-#   "messages": [
-#     {{
-#       "role": "system",
-#       "content": "당신은 Swift 난독화 도구를 위한 적대적 코드 생성(Adversarial Code Generation)을 전문으로 하는 15년 경력의 프린시펄 엔지니어입니다. 당신의 임무는 정적 분석 엔진에 모호함, 충돌, 엣지 케이스를 유발하는 것으로 알려진 언어 패턴들을 전략적으로 조합하여, '최악의 시나리오'에 해당하는 Swift 소스 코드를 설계하고 생성하는 것입니다. 당신이 생성하는 코드는 모든 난독화 도구의 취약점을 탐색하고 실패 가능성을 극대화하도록 설계된 궁극적인 스트레스 테스트입니다."
-#     }},
-#     {{
-#       "role": "user",
-#       "content": {{
-#         "task": "당신의 임무는 단일의 복잡하고 문법적으로 유효한 Swift 소스 코드 파일을 생성하는 것입니다. 이 코드는 `parameters.patterns` 배열에 지정된 패턴들의 정교한 조합이어야 합니다. 각 패턴의 미묘한 차이를 이해하기 위해 아래 `examples` 섹션을 반드시 참고해야 합니다.",
-#         "parameters": {{
-#           "patterns": {selected_patterns}
-#         }},
-#         "examples": {pattern_examples},
-#         "constraints": [
-#           {{
-#             "constraint": "예시 사용 의무",
-#             "description": "`parameters.patterns` 목록의 각 패턴에 대해, `examples` 섹션에 제시된 해당 예시의 기법이나 구조를 반드시 3개 이상 통합해야 합니다. 이것은 매우 중요한 요구사항입니다."
-#           }},
-#           {{
-#             "constraint": "깊게 얽힌 논리 구조",
-#             "description": "패턴들을 단순히 순차적으로 나열해서는 안 됩니다. 복잡한 호출 그래프와 논리적 종속성을 만들도록 패턴들을 서로 엮어야 합니다. 예를 들어, `dynamic_dispatch`를 사용하는 클래스의 상태를 `swiftui_property_wrapper`가 관리하고, 이 클래스가 `codable_synthesis`로 디코딩된 데이터를 처리하는 방식입니다."
-#           }},
-#           {{
-#             "constraint": "창의적이고 명확하지 않은 조합",
-#             "description": "패턴들의 조합은 사소하거나 일반적이어서는 안 됩니다. 이 언어 기능들이 상호 작용하여 복잡한 엣지 케이스를 만들어낼 수 있는, 명확하지 않거나, 놀랍거나, 복잡한 방법들을 찾아 구현하도록 노력하세요."
-#           }},
-#           {{
-#             "constraint": "구조적 다양성",
-#             "description": "만약 동일한 파라미터로 이 프롬프트가 여러 번 주어진다면, 생성된 각 결과물은 구조적으로나 개념적으로 달라야 합니다. 상용구(boilerplate)나 반복적인 구조를 생성하는 것을 피하세요."
-#           }},
-#           {{
-#             "constraint": "현실적이고 독립적인 코드",
-#             "description": "생성된 코드는 현실적인 애플리케이션 시나리오를 반영해야 합니다. 사소하거나 학술적인 예제는 피해야 합니다. 최종 결과물은 `import SwiftUI`와 같이 필요한 모든 import 구문을 포함한, 단일의 독립적인 코드 블록이어야 합니다."
-#           }},
-#           {{
-#             "constraint": "플레이스홀더 및 주석 금지",
-#             "description": "'... 구현 세부 정보 ...'와 같은 플레이스홀더 주석을 엄격히 금지합니다. 최종 코드에는 어떤 종류의 주석도 포함되어서는 안 됩니다."
-#           }},
-#           {{
-#             "constraint": "컴파일 요구사항",
-#             "description": "코드는 Swift 5.7 이상 버전에서 어떠한 오류나 경고 없이 완벽하게 컴파일되어야 합니다."
-#           }}
-#         ],
-#         "output_format": {{
-#           "format": "순수 Swift 코드만 출력",
-#           "instruction": "매우 중요: 당신의 전체 답변은 반드시 순수한 Swift 소스 코드 문자열이어야 합니다. 어떠한 설명, 도입부, 또는 ```swift ... ```와 같은 마크다운 구문도 포함하지 마십시오. 출력은 `import ...` 구문이나 코드의 첫 줄로 바로 시작해야 합니다."
-#         }}
-#       }}
-#     }}
-#   ]
-# }}
-# """
+    # with open("final_prompt.json", "w") as f:
+    #     f.write(final_json_string)

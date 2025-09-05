@@ -1,19 +1,21 @@
-import os
 import json
 import shutil
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 import re
+from pathlib import Path
 from collections import defaultdict
+import multiprocessing
+from tqdm import tqdm
+from typing import Dict, Any
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-INPUT_ROOT_DIR = PROJECT_ROOT / 'input_label'
-OUTPUT_ROOT_DIR = PROJECT_ROOT / 'output_label'
-MODEL_SUB_DIRS = ['claude_generated', 'gemini_generated']
 
-SPLIT_INPUT_DIR = PROJECT_ROOT / 'input_label_split'
-SPLIT_OUTPUT_DIR = PROJECT_ROOT / 'output_label_split'
+VALIDATED_DATA_ROOT = PROJECT_ROOT / 'llm_training_data_validated'
+SPLIT_DATA_ROOT = PROJECT_ROOT / 'llm_training_data_split'
+SPLIT_INPUT_DIR = SPLIT_DATA_ROOT / 'inputs'
+SPLIT_OUTPUT_DIR = SPLIT_DATA_ROOT / 'outputs'
+
 
 CONTEXT_MAP = {
     'methods': ['methods', 'initializers', 'deinitializers', 'subscripts', 'variables'],
@@ -34,153 +36,141 @@ CONTEXT_MAP = {
 def setup_directories():
     """결과를 저장할 디렉토리를 준비합니다."""
     print("결과 디렉토리를 초기화합니다...")
-    if SPLIT_INPUT_DIR.exists(): shutil.rmtree(SPLIT_INPUT_DIR)
-    if SPLIT_OUTPUT_DIR.exists(): shutil.rmtree(SPLIT_OUTPUT_DIR)
-    SPLIT_INPUT_DIR.mkdir(exist_ok=True)
-    SPLIT_OUTPUT_DIR.mkdir(exist_ok=True)
+    if SPLIT_DATA_ROOT.exists(): shutil.rmtree(SPLIT_DATA_ROOT)
+    SPLIT_INPUT_DIR.mkdir(parents=True, exist_ok=True)
+    SPLIT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     print("디렉토리 준비 완료.")
 
 
-def process_file_pair(task_info):
-    """
-    하나의 (input.json, output.json) 쌍을 그룹화하여 분할합니다.
-    Positive 샘플(Input/Output 쌍)과 Negative 샘플(Input 단독)을 모두 생성합니다.
-    """
-    input_file_path, output_file_path, model_dir = task_info
+def normalize_symbol_name(name: str) -> str:
+    """심볼 이름에서 파라미터 부분을 제거하여 정규화합니다. (e.g., 'myFunc(a: Int)' -> 'myFunc')"""
+    return name.split('(')[0]
+
+
+def parse_thinking_block(thinking_text: str) -> Dict[str, str]:
+    """<thinking> 블록의 텍스트를 파싱하여, 정규화된 심볼 이름을 키로 하는 딕셔너리로 만듭니다."""
+    # 정규식 패턴: "**Category `SymbolName`**:"으로 시작하는 블록을 찾음
+    pattern = re.compile(r"(\*\*.+?`(.+?)`\*\*:.+?)(?=\n\n\*\*|\Z)", re.DOTALL)
+    matches = pattern.finditer(thinking_text)
+    reasoning_map = {}
+    for match in matches:
+        full_block = match.group(1).strip()
+        symbol_name = match.group(2).strip()
+        normalized_name = normalize_symbol_name(symbol_name)
+        reasoning_map[normalized_name] = full_block
+    return reasoning_map
+
+
+def split_single_file(file_path: Path):
+    """하나의 검증된 파일을 CONTEXT_MAP 규칙에 따라 여러 개의 작은 파일로 분할합니다."""
     try:
-        with open(input_file_path, 'r', encoding='utf-8') as f:
-            full_input_data = json.load(f)
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
 
-        output_data = {}
-        if output_file_path.exists():
-            with open(output_file_path, 'r', encoding='utf-8') as f:
-                output_data = json.load(f)
+        instruction = data.get("instruction")
+        original_input = data.get("input", {})
+        full_output = data.get("output", {})
 
-        mapping_data = full_input_data.get('mapping', {})
-        input_data = full_input_data.get('data', {})
-        meta_data = input_data.get('meta', {})
-        original_input_decisions = input_data.get('decisions', {})
-        base_name = re.sub(r'^(input_|output_)', '', input_file_path.stem)
+        original_symbols = original_input.get("symbol_data_for_analysis", {})
+        json_output = full_output.get("json_output", {})
+
+        base_name = file_path.stem.replace('validated_', '')
+        relative_parent = file_path.relative_to(VALIDATED_DATA_ROOT).parent
+
+        full_thinking_content = full_output.get("thinking", "")
+        reasoning_map = parse_thinking_block(full_thinking_content)
 
         for group_name, source_categories in CONTEXT_MAP.items():
+            grouped_input_symbols = {}
+            for category in source_categories:
+                if category in original_symbols:
+                    grouped_input_symbols[category] = original_symbols[category]
 
-            # Positive / Negative 샘플 여부 판단
-            is_positive = group_name in output_data and output_data[group_name]
-            is_high_confidence_negative = (not is_positive) and (group_name in original_input_decisions)
+            if not grouped_input_symbols:
+                continue
 
-            # Positive 샘플이거나 고신뢰도 Negative 샘플일 경우에만 Input 파일 생성
-            if is_positive or is_high_confidence_negative:
+            new_input_obj = original_input.copy()
+            new_input_obj['symbol_data_for_analysis'] = grouped_input_symbols
 
-                # 그룹화된 Input 데이터 구성
-                new_input_decisions = {}
-                for category in source_categories:
-                    if category in original_input_decisions:
-                        new_input_decisions[category] = original_input_decisions[category]
+            current_group_symbol_names = {
+                normalize_symbol_name(symbol['symbol_name'])
+                for category in grouped_input_symbols.values()
+                for symbol in category
+            }
 
-                if not new_input_decisions:
-                    continue
+            filtered_thinking_parts = [
+                block for name, block in reasoning_map.items() if name in current_group_symbol_names
+            ]
+            filtered_thinking = "\n\n".join(filtered_thinking_parts)
 
-                group_dir_name = f"{group_name}_group"
-                final_input_structure = {"mapping": mapping_data,
-                                         "data": {"meta": meta_data, "decisions": new_input_decisions}}
+            grouped_output_symbols = {}
+            if group_name in json_output and json_output.get(group_name):
+                grouped_output_symbols = {group_name: json_output[group_name]}
 
-                # Input 파일 저장
-                input_save_dir = SPLIT_INPUT_DIR / model_dir / group_dir_name
-                input_save_dir.mkdir(parents=True, exist_ok=True)
-                input_filename = f"input_{base_name}_{group_dir_name}.json"
-                with open(input_save_dir / input_filename, 'w', encoding='utf-8') as f:
-                    json.dump(final_input_structure, f, ensure_ascii=False, indent=2)
+            is_positive_sample = bool(grouped_output_symbols)
+            # [수정] Negative 샘플 판단 로직을 더 명확하게 변경: 현재 그룹의 카테고리 중 하나라도 원본 심볼에 있으면 high confidence로 간주
+            is_high_confidence_negative = (not is_positive_sample) and any(
+                cat in original_symbols for cat in source_categories)
 
-                # Positive 샘플인 경우에만 Output 파일도 함께 저장
-                if is_positive:
-                    final_output_structure = {group_name: output_data[group_name]}
-                    output_save_dir = SPLIT_OUTPUT_DIR / model_dir / group_dir_name
-                    output_save_dir.mkdir(parents=True, exist_ok=True)
-                    output_filename = f"output_{base_name}_{group_dir_name}.json"
-                    with open(output_save_dir / output_filename, 'w', encoding='utf-8') as f:
-                        json.dump(final_output_structure, f, ensure_ascii=False, indent=2)
+            if not (is_positive_sample or is_high_confidence_negative):
+                continue
 
-        return {"model": model_dir, "status": "SUCCESS", "message": f"'{input_file_path.name}' 처리"}
+            group_dir_name = f"{group_name}_group"
 
+            input_save_dir = SPLIT_INPUT_DIR / relative_parent / group_dir_name
+            input_save_dir.mkdir(parents=True, exist_ok=True)
+            input_filename = f"input_{base_name}_{group_dir_name}.json"
+
+            final_input_record = {
+                "instruction": instruction,
+                "input": new_input_obj,
+                "output": ""
+            }
+            with open(input_save_dir / input_filename, 'w', encoding='utf-8') as f:
+                json.dump(final_input_record, f, indent=2, ensure_ascii=False)
+
+            if is_positive_sample:
+                output_save_dir = SPLIT_OUTPUT_DIR / relative_parent / group_dir_name
+                output_save_dir.mkdir(parents=True, exist_ok=True)
+                output_filename = f"output_{base_name}_{group_dir_name}.json"
+
+                final_output_record = {
+                    "thinking": filtered_thinking,
+                    "json_output": grouped_output_symbols
+                }
+                with open(output_save_dir / output_filename, 'w', encoding='utf-8') as f:
+                    json.dump(final_output_record, f, indent=2, ensure_ascii=False)
+        return None
     except Exception as e:
-        return {"model": model_dir, "status": "ERROR", "message": f"'{input_file_path.name}' 처리 중 오류: {e}"}
+        return f"오류: {file_path.name} 처리 중 - {e}"
 
 
 def main():
     """메인 실행 함수"""
     setup_directories()
-    tasks = []
-    print("처리할 Input/Output 파일 쌍을 검색 및 매칭합니다...")
 
-    input_files_map, output_files_map = {}, {}
-    for sub_dir in MODEL_SUB_DIRS:
-        input_dir = INPUT_ROOT_DIR / sub_dir
-        if input_dir.is_dir():
-            count = 0
-            for filename in os.listdir(input_dir):
-                match = re.search(r'input_(.+)\.json', filename)
-                if match:
-                    key = match.group(1)
-                    input_files_map[(key, sub_dir)] = input_dir / filename
-                    count += 1
-            print(f"   - '{sub_dir}'에서 Input 파일 {count}개 발견")
-
-        output_dir = OUTPUT_ROOT_DIR / sub_dir
-        if output_dir.is_dir():
-            for filename in os.listdir(output_dir):
-                match = re.search(r'output_(.+)\.json', filename)
-                if match:
-                    key = match.group(1)
-                    output_files_map[(key, sub_dir)] = output_dir / filename
-
-    for (key, model_dir), input_path in input_files_map.items():
-        output_path = output_files_map.get((key, model_dir), Path())
-        tasks.append((input_path, output_path, model_dir))
-
-    if not tasks:
-        print("처리할 파일 쌍을 찾지 못했습니다. 파일 이름 규칙(input_*.json, output_*.json)을 확인해주세요.")
+    validated_files = sorted(list(VALIDATED_DATA_ROOT.rglob("*.json")))
+    if not validated_files:
+        print("분할할 검증된 파일이 없습니다.")
         return
 
-    print(f"\n총 {len(tasks)}개의 파일 세트에 대해 분할 작업을 시작합니다...")
-    with Pool(processes=cpu_count()) as pool:
-        results = pool.map(process_file_pair, tasks)
+    print(f"\n🚀 2단계: 총 {len(validated_files)}개의 검증된 파일을 분할합니다...")
 
-    print("\n\n" + "=" * 50)
-    print("📊 최종 처리 결과 요약")
-    print("=" * 50)
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+        results = list(
+            tqdm(pool.imap_unordered(split_single_file, validated_files), total=len(validated_files), desc="파일 분할 중"))
 
-    file_summary = defaultdict(lambda: defaultdict(int))
-    error_details = []
+    errors = [res for res in results if res is not None]
 
-    for res in results:
-        model = res["model"]
-        status = res["status"]
-        file_summary[model][status] += 1
-        if status == "ERROR":
-            error_details.append(f"[{model}] {res['message']}")
-
-    grand_total_files = 0
-    for model in sorted(file_summary.keys()):
-        stats = file_summary[model]
-        total_files = sum(stats.values())
-        grand_total_files += total_files
-
-        print(f"\n--- 모델: {model} (총 {total_files}개 파일) ---")
-        print(f"  - ✅ 파일 처리 성공: {stats.get('SUCCESS', 0)}개")
-        print(f"  - 🔥 파일 처리 오류: {stats.get('ERROR', 0)}개")
-
-    print("\n" + "=" * 50)
-    print(f"📈 전체 처리 파일 수: {grand_total_files}개")
-    print("=" * 50)
-
-    if error_details:
-        print("\n\n" + "🔥 오류 상세 내역:")
-        print("-" * 40)
-        for detail in sorted(error_details):
-            print(detail)
-
-    print("\n모든 파일 분할 작업이 완료되었습니다.")
+    print("\n🎉 2단계 완료!")
+    if errors:
+        print(f"   - {len(errors)}개의 파일 처리 중 오류가 발생했습니다.")
+        for err in errors[:5]:
+            print(f"     - {err}")
+    else:
+        print("   - 모든 파일이 성공적으로 분할되었습니다.")
 
 
 if __name__ == '__main__':
     main()
+

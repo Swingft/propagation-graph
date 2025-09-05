@@ -1,187 +1,123 @@
-import os
 import json
 import re
 from pathlib import Path
-from multiprocessing import Pool, cpu_count
-from collections import defaultdict
+from tqdm import tqdm
+from typing import Dict, Any, Optional
 
-
+# --- 경로 상수 ---
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-INPUT_DIR = PROJECT_ROOT / 'input_label_split'
-OUTPUT_DIR = PROJECT_ROOT / 'output_label_split'
-
-MODEL_FOLDERS = ['claude_generated', 'gemini_generated']
-
-
-def clean_symbol_name(symbol_name: str) -> str:
-    """
-    'viewDidLoad(())'나 여러 줄의 시그니처를 제거하고,
-    '.deinit' -> 'deinit' 처럼 이름 앞의 점을 제거하여 이름을 정규화합니다.
-    """
-    cleaned = re.sub(r'\(.*\)', '', symbol_name, flags=re.DOTALL)
-    cleaned = cleaned.lstrip('.')
-    return cleaned
+INPUT_DATA_ROOT = PROJECT_ROOT / 'llm_training_inputs'
+RAW_OUTPUT_ROOT = PROJECT_ROOT / 'llm_training_raw_outputs'
+VALIDATED_DATA_ROOT = PROJECT_ROOT / 'llm_training_data_validated'
 
 
-def extract_selector_name(selector_str: str) -> str | None:
-    """'#selector(processData(_:))' -> 'processData' 와 같이 셀렉터에서 순수 함수 이름을 추출합니다."""
-    match = re.search(r'#selector\((.*)\)', selector_str)
-    if not match:
-        return None
-
-    full_selector = match.group(1)
-    method_part = full_selector.split('.')[-1]
-    return method_part.split('(')[0]
-
-
-def verify_pair(task_info: tuple):
-    """
-    하나의 (input, output) 파일 쌍을 검증합니다.
-    Input의 모든 필드를 스캔하여 가능한 모든 심벌 이름을 추출하고 비교합니다.
-    """
-    input_path, output_path = task_info
-
+def parse_and_validate_response(raw_response: str) -> Optional[Dict[str, Any]]:
+    """LLM의 원본 응답에서 <thinking>과 JSON을 분리하고 유효성을 검증합니다."""
     try:
-        # category는 이제 'methods_group' 과 같은 형태가 됩니다.
-        category = input_path.parent.name
-        base_name = input_path.stem.replace('input_', '')
-        # pattern_name 추출 로직은 '_group'이 추가되어도 잘 동작합니다.
-        pattern_name = base_name.replace(f'_{category}', '')
+        thinking_match = re.search(r"<thinking>(.*?)</thinking>", raw_response, re.DOTALL)
+        thinking_content = thinking_match.group(1).strip() if thinking_match else ""
+
+        json_start_index = raw_response.find('{')
+        json_end_index = raw_response.rfind('}')
+
+        if json_start_index == -1 or json_end_index == -1:
+            return {"thinking": thinking_content or "No JSON block found.", "json_output": {}}
+
+        json_str = raw_response[json_start_index: json_end_index + 1]
+        json_output = json.loads(json_str)
+        return {"thinking": thinking_content, "json_output": json_output}
+
+    except json.JSONDecodeError:
+        return None  # JSON이 깨진 경우 None 반환
     except Exception:
-        category = "unknown"
-        pattern_name = input_path.stem
-
-    context_str = f"({pattern_name}/{category})"
-
-    if not output_path.exists():
-        return (input_path.parent.parent.name, "SKIPPED", f"{context_str} 짝이 되는 Output 파일 없음: {output_path.name}")
-
-    try:
-        with open(input_path, 'r', encoding='utf-8') as f:
-            input_full_data = json.load(f)
-
-        mapping = input_full_data.get('mapping', {})
-        input_data = input_full_data.get('data', {})
-        input_decisions = input_data.get('decisions', {})
-
-        keys_with_names = {
-            mapping.get(key) for key in [
-                'references', 'calls_out', 'inherits',
-                'conforms', 'extension_of'
-            ] if mapping.get(key)
-        }
-        selector_key = mapping.get('selector_refs')
-
-        all_input_symbols = set()
-        for cat_values in input_decisions.values():
-            for symbol in cat_values:
-                name = symbol.get('symbol_name', '')
-                if name:
-                    all_input_symbols.add(clean_symbol_name(name))
-
-                symbol_input = symbol.get('input', {})
-                for p_key, value in symbol_input.items():
-                    if p_key in keys_with_names:
-                        if isinstance(value, list):
-                            for item in value:
-                                all_input_symbols.add(clean_symbol_name(str(item)))
-                        elif isinstance(value, str):
-                            all_input_symbols.add(clean_symbol_name(value))
-
-                    elif p_key == selector_key and isinstance(value, list):
-                        for selector_str in value:
-                            extracted_name = extract_selector_name(selector_str)
-                            if extracted_name:
-                                all_input_symbols.add(extracted_name)
-
-        with open(output_path, 'r', encoding='utf-8') as f:
-            output_data = json.load(f)
-
-        all_output_symbols = set()
-        for cat_values in output_data.values():
-            for symbol in cat_values:
-                name = symbol.get('symbol_name')
-                if name:
-                    all_output_symbols.add(clean_symbol_name(name))
-
-        if all_output_symbols.issubset(all_input_symbols):
-            return (input_path.parent.parent.name, "PASS", f"{context_str} 통과")
-        else:
-            missing_symbols = all_output_symbols - all_input_symbols
-            return (
-            input_path.parent.parent.name, "FAIL", f"{context_str} Input 문맥에 존재하지 않는 심벌 발견: {list(missing_symbols)}")
-
-    except Exception as e:
-        return (input_path.parent.parent.name, "ERROR", f"{context_str} 처리 중 오류: {e}")
+        return None
 
 
 def main():
-    """메인 실행 함수"""
-    tasks = []
-    print("검증할 Input/Output 파일 쌍을 검색합니다...")
-
-    for model_folder in MODEL_FOLDERS:
-        model_input_path = INPUT_DIR / model_folder
-        if not model_input_path.is_dir():
-            continue
-
-        # 'methods_group', 'classes_group' 등 모든 하위 디렉토리를 순회
-        for group_dir in model_input_path.iterdir():
-            if not group_dir.is_dir():
-                continue
-
-            # 해당 그룹 디렉토리 내의 모든 input_*.json 파일을 찾음
-            for input_file in group_dir.glob('input_*.json'):
-                # 짝이 되는 output 파일 경로를 구성
-                output_filename = input_file.name.replace('input_', 'output_')
-                output_file = OUTPUT_DIR / model_folder / group_dir.name / output_filename
-                tasks.append((input_file, output_file))
-
-    if not tasks:
-        print("검증할 파일을 찾지 못했습니다.")
+    """ "문제지"와 "원본 답안지"를 조합하여 검증된 중간 데이터셋을 생성합니다. """
+    if not INPUT_DATA_ROOT.is_dir() or not RAW_OUTPUT_ROOT.is_dir():
+        print(f"🚨 오류: 필수 디렉토리를 찾을 수 없습니다.")
         return
 
-    print(f"총 {len(tasks)}개의 파일 쌍에 대해 검증을 시작합니다...")
+    VALIDATED_DATA_ROOT.mkdir(exist_ok=True)
+    print("🚀 1단계: API 응답 파싱 및 검증 시작...")
 
-    with Pool(processes=cpu_count()) as pool:
-        results = pool.map(verify_pair, tasks)
+    input_files = sorted(list(INPUT_DATA_ROOT.rglob("*.json")))
 
-    summary = defaultdict(lambda: defaultdict(int))
-    failed_details = []
+    processed_count = 0
+    skipped_missing_raw = 0
+    skipped_parse_fail = 0
+    skipped_already_exists = 0
 
-    for model, status, message in results:
-        summary[model][status] += 1
-        if status in ["FAIL", "ERROR"]:
-            failed_details.append(f"[{model}] {status}: {message}")
+    for input_file_path in tqdm(input_files, desc="파싱 및 검증 중"):
+        try:
+            # 짝이 맞는 raw_output 파일 경로 생성
+            original_stem = input_file_path.stem.replace('training_input_', '')
+            relative_path = input_file_path.relative_to(INPUT_DATA_ROOT)
+            raw_output_path = (RAW_OUTPUT_ROOT / relative_path.parent / f"raw_output_{original_stem}.txt")
 
-    print("\n\n" + "=" * 50)
-    print("📊 검증 결과 요약")
-    print("=" * 50)
+            # 최종 파일 경로 생성
+            validated_output_dir = VALIDATED_DATA_ROOT / relative_path.parent
+            validated_output_path = validated_output_dir / f"validated_{original_stem}.json"
 
-    grand_total = 0
-    for model in MODEL_FOLDERS:
-        if model in summary:
-            stats = summary[model]
-            total = sum(stats.values())
-            grand_total += total
-            print(f"\n--- 모델: {model} (총 {total}개) ---")
-            print(f"  - ✅ PASS: {stats['PASS']}개")
-            print(f"  - 🔥 FAIL: {stats['FAIL']}개")
-            print(f"  - ⏭️ SKIPPED (Output 없음): {stats['SKIPPED']}개")
-            print(f"  - 🚨 ERROR: {stats['ERROR']}개")
+            # 각 건너뛰기 조건을 명확하게 분리하고 카운트
+            if not raw_output_path.exists():
+                skipped_missing_raw += 1
+                continue
+
+            if validated_output_path.exists():
+                skipped_already_exists += 1
+                processed_count += 1  # 이미 처리된 것도 성공으로 간주
+                continue
+
+            # 실제 처리 로직
+            with open(input_file_path, 'r', encoding='utf-8') as f_in:
+                input_data = json.load(f_in)
+
+            with open(raw_output_path, 'r', encoding='utf-8') as f_raw:
+                raw_response = f_raw.read()
+
+            parsed_output = parse_and_validate_response(raw_response)
+
+            if parsed_output is None:
+                # print(f"\n⚠️ 경고: {raw_output_path.name} 파싱 실패. 건너뜁니다.")
+                skipped_parse_fail += 1
+                continue
+
+            validated_data = {
+                "instruction": input_data.get("instruction", ""),
+                "input": input_data.get("input", {}),
+                "output": parsed_output
+            }
+
+            validated_output_dir.mkdir(parents=True, exist_ok=True)
+            with open(validated_output_path, 'w', encoding='utf-8') as f_out:
+                json.dump(validated_data, f_out, indent=2, ensure_ascii=False)
+
+            processed_count += 1
+
+        except Exception as e:
+            # 예상치 못한 오류가 발생하면 파싱 실패로 간주
+            skipped_parse_fail += 1
+            # print(f"\n🚨 오류: {input_file_path.name} 처리 중 오류 발생: {e}")
+            continue
 
     print("\n" + "=" * 50)
-    print(f"📈 전체 파일 수: {grand_total}개")
+    print("🎉 1단계 완료! 최종 결과 요약:")
+    print("=" * 50)
+    print(f"  - 📂 총 확인한 입력 파일: {len(input_files)}개")
+    print("-" * 50)
+    print(f"  - ✅ 성공적으로 검증/처리된 파일: {processed_count}개")
+    print(f"     (이 중 이미 처리되어 건너뛴 파일: {skipped_already_exists}개)")
+    print("-" * 50)
+    print(f"  - ⏭️ 건너뛴 파일 (총 {skipped_missing_raw + skipped_parse_fail}개):")
+    print(f"     - 원본 응답(.txt) 파일 없음: {skipped_missing_raw}개")
+    print(f"     - 파싱/검증 실패: {skipped_parse_fail}개")
     print("=" * 50)
 
-    if failed_details:
-        print("\n\n" + "🔥 실패 및 오류 상세 내역:")
-        print("-" * 40)
-        for detail in sorted(failed_details):
-            print(detail)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+
