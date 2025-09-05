@@ -7,7 +7,7 @@ import multiprocessing
 from tqdm import tqdm
 from typing import Dict, Any
 
-
+# --- 경로 상수 ---
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
@@ -29,7 +29,9 @@ CONTEXT_MAP = {
     'structs': ['structs', 'protocols', 'classes'],
     'enums': ['enums', 'protocols', 'enumCases', 'classes'],
     'protocols': ['protocols'],
-    'extensions': ['extensions', 'classes', 'structs', 'enums', 'protocols']
+    'extensions': ['extensions', 'classes', 'structs', 'enums', 'protocols'],
+    # [수정] typealias 그룹화 규칙을 추가합니다.
+    'typealiases': ['typealiases', 'classes', 'structs', 'enums', 'protocols', 'extensions']
 }
 
 

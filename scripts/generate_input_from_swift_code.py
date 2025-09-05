@@ -7,7 +7,7 @@ from functools import partial
 from typing import List, Dict, Any, Optional
 from tqdm import tqdm
 
-
+# --- 상수 정의 ---
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 ANALYZER_DIR = PROJECT_ROOT / "SwiftASTAnalyzer"
@@ -15,13 +15,13 @@ TARGET_DATA_ROOT = PROJECT_ROOT / "data"
 OUTPUT_ROOT = PROJECT_ROOT / "llm_training_inputs"
 
 # --- LLM 프롬프트 구조화 ---
-# [CoT 개선] LLM의 역할을 정의하고, Chain-of-Thought 응답을 생성해야 함을 명시.
 LLM_INSTRUCTION = """Your Role: You are an expert static analysis assistant with a deep understanding of Swift's semantic structure. Your mission is to meticulously analyze the provided symbol information to identify which symbols must have their names preserved during code obfuscation.
 
 **CRITICAL**: You MUST follow a strict Chain-of-Thought process. First, provide your step-by-step reasoning within a `<thinking>` block. After your reasoning is complete, provide the final JSON object.
+
+**VERY IMPORTANT**: It is crucial that you complete your entire response. Do not stop generating mid-sentence or mid-block. Take all the time needed to provide a full and complete analysis for all provided symbols before concluding. Incomplete responses are not acceptable.
 """
 
-# [CoT]
 LLM_TASK_GUIDELINES = {
     "procedure": [
         "1. Start your entire response with a `<thinking>` block.",
@@ -31,25 +31,37 @@ LLM_TASK_GUIDELINES = {
         "5. After analyzing all symbols and closing the `</thinking>` tag, provide the final, clean JSON object containing only the symbols that must be excluded."
     ],
     "core_analysis_patterns": {
-        "Runtime String References (`objc_selector`, `stringly_typed_api`)": "A symbol's name must be preserved if it is referenced as a raw string at runtime. This includes Objective-C selectors (#selector) which rely on the Objective-C runtime to find methods by their string name, and other stringly-typed APIs like Notification.Name or UserDefaults keys. Obfuscating the symbol's name would break this lookup mechanism, leading to runtime crashes.",
-        "KVC/KVO and Data Binding (`kvc_kvo`, `coredata_nsmanaged`)": "Preservation is required when a symbol is accessed through dynamic, string-based mechanisms like Key-Value Coding (KVC), Key-Value Observing (KVO), or KeyPath. Similarly, CoreData's @NSManaged properties dynamically generate accessors at runtime based on the property name matching the nC1 model. Changing these names will cause runtime exceptions as the lookup mechanism will fail.",
-        "C Function Interface (FFI) Exposure (`ffi_entry`)": "A symbol exposed to C/C++/Objective-C via attributes like `@_cdecl` must retain its name. This attribute creates a symbol in the binary with the exact function name, forming a contract with external code. Obfuscating it would result in linking errors or an inability for external code to find and call the function.",
-        "Reflection (`runtime_reflection`)": "Symbols whose names are accessed via runtime reflection, such as through Swift's `Mirror` API, must not be changed. Reflection-based logic (e.g., for serialization, debugging, or dynamic UI generation) often inspects property names as strings (`child.label`). Obfuscation would make this introspection yield incorrect nC1, breaking the feature.",
-        "Codable Synthesis (`codable_synthesized`)": "When the compiler automatically synthesizes `Codable` conformance, property names are used directly as keys in the serialized format (e.g., JSON). Obfuscating these property names would change the keys in the output, breaking API contracts with servers or preventing previously stored nC1 from being decoded correctly.",
-        "Resource Binding (`resource_binding`)": "A symbol's name must be preserved if it is used to link to external resources. This includes names used in `UIImage(named:)`, Storyboard IDs, XIB file connections, or asset catalog names. Obfuscating these string-based identifiers breaks the connection between code and resources, preventing them from being loaded.",
-        "External Contracts and Extensions (`external_contract`)": "Any `public` or `open` symbol is part of a module's public API, which forms a stable contract (ABI) with other modules. If a symbol's name in this API is changed, any external code that depends on it will fail to compile or will crash at runtime due to missing symbols. Its name is a non-negotiable part of the contract.",
-        "Dynamic Dispatch & ObjC Exposure (`dynamic_dispatch`, `objc_exposed`)": "Symbols marked with `@objc` and/or `dynamic` must have their names preserved. These keywords ensure the symbol is available to the Objective-C runtime and that method calls are dispatched dynamically. The runtime relies on the symbol's name for message passing; obfuscating it would make the symbol undiscoverable.",
-        "Protocol Requirement Implementation (`protocol_requirement`)": "A symbol that fulfills a protocol requirement must maintain its original name. The Swift compiler and runtime verify protocol conformance by matching the exact names and type signatures of the required members. If an implementation's name is obfuscated, the type will no longer correctly conform to the protocol, leading to compile-time errors or runtime crashes."
+        "Runtime String References": "Preserve if the name is used as a string at runtime (e.g., #selector, Notification.Name), as this string-based lookup would fail.",
+        "KVC/KVO and Data Binding": "Preserve if the name is used for Key-Value Coding/Observing (e.g., @NSManaged, KeyPath), as the dynamic lookup mechanism relies on the exact name.",
+        "C Function Interface (FFI) Exposure": "Preserve if the name is exposed to C/Objective-C (e.g., @_cdecl), as it forms a hard-coded contract with external code.",
+        "Reflection": "Preserve if the name is accessed via reflection (e.g., Mirror API), as introspection relies on the original property names.",
+        "Codable Synthesis": "Preserve property names if Codable is synthesized, as they are used as keys in the serialized format (e.g., JSON), breaking API contracts.",
+        "Resource Binding": "Preserve if the name is a string-based link to an external resource (e.g., UIImage(named:), Storyboard IDs), as the link would break.",
+        "External Contracts and Extensions": "Preserve if the symbol is `public` or `open`, as it's part of a module's public API contract (ABI) and changing it would break external dependencies.",
+        "Dynamic Dispatch & ObjC Exposure": "Preserve if marked with `@objc` or `dynamic`, as the Objective-C runtime relies on the exact name for message passing.",
+        "Protocol Requirement Implementation": "Preserve if it's an implementation of a protocol requirement, as the compiler verifies conformance by matching the exact name and signature."
     },
     "output_format": {
         "description": "Your response MUST consist of two parts: a reasoning block followed by a JSON block.",
         "reasoning_block": "A `<thinking>...</thinking>` block containing your step-by-step analysis of each symbol.",
         "json_block_format": {
-            "description": "A valid JSON object containing ONLY the symbols that must be excluded from obfuscation.",
-            "fields": {
-                "symbol_name": "The pure name excluding function arguments.",
-                "tags": "An array of standard tags corresponding to the reason for exclusion.",
-                "rationale": "A clear, 1-2 sentence explanation for the exclusion, based on the input nC1."
+            "description": "A valid JSON object containing ONLY the symbols that must be excluded, grouped by their category.",
+            "possible_top_level_keys": [
+                "classes", "structs", "enums", "protocols", "methods",
+                "variables", "initializers", "deinitializers", "subscripts",
+                "extensions", "enumCases", "typealiases"
+            ],
+            "strict_schema_enforcement": "Each symbol object inside the category arrays MUST contain EXACTLY the following three keys: `symbol_name`, `tags`, and `rationale`.",
+            # symbol_name 규칙을 더욱 강조하고 명확한 예시를 추가.
+            "symbol_name_rule": {
+                "description": "CRUCIAL: The `symbol_name` value MUST be the pure name only, WITHOUT any function parameters, parentheses, or return types.",
+                "correct_example": "createViewControllerFromStoryboard",
+                "incorrect_example": "createViewControllerFromStoryboard((named: String, identifier: String) -> UIViewController?)"
+            },
+            "example_symbol_object": {
+                "symbol_name": "ExampleSymbolName",
+                "tags": ["Example Tag 1", "Example Tag 2"],
+                "rationale": "This is an example rationale explaining why the symbol must be excluded."
             }
         }
     }
@@ -66,7 +78,6 @@ KEY_MAPPING = {
 
 
 def build_analyzer(analyzer_dir: Path) -> Path:
-    """SwiftASTAnalyzer를 릴리즈 모드로 빌드하고 실행 파일 경로를 반환합니다."""
     print("🚀 SwiftASTAnalyzer 빌드를 시작합니다...")
     analyzer_bin_name = "swift-ast-analyzer"
     try:
@@ -85,17 +96,14 @@ def build_analyzer(analyzer_dir: Path) -> Path:
 
 
 def find_swift_files(root: Path) -> List[Path]:
-    """지정된 루트 디렉토리 아래의 모든 .swift 파일을 재귀적으로 검색합니다."""
     print(f"🔎 '{root}' 디렉토리에서 Swift 파일들을 검색합니다...")
     swift_files = list(root.rglob("*.swift"))
     print(f"✨ 총 {len(swift_files)}개의 Swift 파일을 찾았습니다.")
     return swift_files
 
 def _clean_and_compact_decisions(decisions_data: Dict[str, Any], mapping: Dict[str, str]) -> Dict[str, Any]:
-    """분석 결과('decisions') 데이터에 대해 키 간결화 및 정제 작업을 수행합니다."""
     if not isinstance(decisions_data, dict):
         return decisions_data
-
     for category, symbols in decisions_data.items():
         if isinstance(symbols, list):
             for symbol_obj in symbols:
@@ -107,7 +115,6 @@ def _clean_and_compact_decisions(decisions_data: Dict[str, Any], mapping: Dict[s
                         if not (isinstance(value, list) and not value)
                     }
                     symbol_obj['input'] = compacted_input
-
     cleaned_decisions = {
         category: symbols for category, symbols in decisions_data.items()
         if isinstance(symbols, list) and symbols
@@ -115,9 +122,6 @@ def _clean_and_compact_decisions(decisions_data: Dict[str, Any], mapping: Dict[s
     return cleaned_decisions
 
 def _create_llm_input_object(guidelines: Dict[str, Any], mapping: Dict[str, str], decisions: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    LLM의 'input' 필드에 들어갈 구조화된 딕셔너리를 생성합니다.
-    """
     return {
         "guidelines": guidelines,
         "mapping_context": mapping,
@@ -127,7 +131,6 @@ def _create_llm_input_object(guidelines: Dict[str, Any], mapping: Dict[str, str]
 def analyze_single_file(
     swift_file: Path, analyzer_bin: Path, data_root: Path, output_root: Path
 ) -> Optional[str]:
-    """단일 Swift 파일을 분석하고, LLM 학습에 적합한 JSON 형식으로 변환하여 저장합니다."""
     try:
         relative_path = swift_file.relative_to(data_root)
         output_dir = output_root / relative_path.parent
@@ -139,7 +142,6 @@ def analyze_single_file(
             capture_output=True, text=True, check=True, encoding="utf-8",
         )
         original_data = json.loads(result.stdout)
-
         decisions_data = original_data.get('decisions', {})
         cleaned_decisions = _clean_and_compact_decisions(decisions_data, KEY_MAPPING)
 
@@ -147,17 +149,13 @@ def analyze_single_file(
             return f"ℹ️ {swift_file} 파일에서 유의미한 심볼을 찾지 못해 건너뜁니다."
 
         llm_input_object = _create_llm_input_object(LLM_TASK_GUIDELINES, KEY_MAPPING, cleaned_decisions)
-
         final_training_data = {
             "instruction": LLM_INSTRUCTION.strip(),
             "input": llm_input_object,
             "output": ""
         }
-
         output_file.write_text(json.dumps(final_training_data, indent=2, ensure_ascii=False), encoding="utf-8")
-
         return None
-
     except json.JSONDecodeError:
         return f"❌ {swift_file} 분석 실패: Swift 분석기가 유효한 JSON을 생성하지 않았습니다."
     except subprocess.CalledProcessError as e:
@@ -167,7 +165,6 @@ def analyze_single_file(
 
 
 def main():
-    """스크립트의 메인 실행 함수"""
     try:
         analyzer_bin = build_analyzer(ANALYZER_DIR)
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -180,14 +177,12 @@ def main():
 
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     print(f"\n⚙️ 총 {len(swift_files)}개 파일에 대한 병렬 분석을 시작합니다...")
-
     worker_func = partial(
         analyze_single_file,
         analyzer_bin=analyzer_bin,
         data_root=TARGET_DATA_ROOT,
         output_root=OUTPUT_ROOT,
     )
-
     success_count = 0
     errors = []
     infos = []
@@ -197,7 +192,6 @@ def main():
             total=len(swift_files),
             desc="파일 분석 중"
         ))
-
     for res in results:
         if res is None:
             success_count += 1
@@ -205,22 +199,18 @@ def main():
             errors.append(res)
         elif res.startswith("ℹ️"):
             infos.append(res)
-
     print("\n--- 분석 완료 ---")
     if infos:
         print(f"🔹 정보 ({len(infos)}건):")
         for info_log in infos:
             print(f"   {info_log}")
-
     if errors:
         print(f"🔥 오류 ({len(errors)}건):")
         for error_log in errors:
             print(f"   {error_log}")
-
     print(f"\n🎉 {success_count}개의 파일이 성공적으로 처리되어 학습 입력 데이터로 변환되었습니다!")
     if errors:
         print(f"   (오류가 발생한 {len(errors)}개 파일은 제외되었습니다.)")
-
 
 if __name__ == "__main__":
     main()
