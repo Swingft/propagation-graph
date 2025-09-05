@@ -16,7 +16,6 @@ SPLIT_DATA_ROOT = PROJECT_ROOT / 'llm_training_data_split'
 SPLIT_INPUT_DIR = SPLIT_DATA_ROOT / 'inputs'
 SPLIT_OUTPUT_DIR = SPLIT_DATA_ROOT / 'outputs'
 
-
 CONTEXT_MAP = {
     'methods': ['methods', 'initializers', 'deinitializers', 'subscripts', 'variables'],
     'properties': ['properties'],
@@ -30,7 +29,6 @@ CONTEXT_MAP = {
     'enums': ['enums', 'protocols', 'enumCases', 'classes'],
     'protocols': ['protocols'],
     'extensions': ['extensions', 'classes', 'structs', 'enums', 'protocols'],
-    # [수정] typealias 그룹화 규칙을 추가합니다.
     'typealiases': ['typealiases', 'classes', 'structs', 'enums', 'protocols', 'extensions']
 }
 
@@ -64,10 +62,13 @@ def parse_thinking_block(thinking_text: str) -> Dict[str, str]:
 
 
 def split_single_file(file_path: Path):
-    """하나의 검증된 파일을 CONTEXT_MAP 규칙에 따라 여러 개의 작은 파일로 분할합니다."""
+    """하나의 검증된 파일을 CONTEXT_MAP 규칙에 따라 여러 개의 작은 파일로 분할하고, 생성된 파일 수를 반환합니다."""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
+
+        # [수정] 생성된 파일 수를 세기 위한 카운터
+        created_files_count = 0
 
         instruction = data.get("instruction")
         original_input = data.get("input", {})
@@ -110,7 +111,6 @@ def split_single_file(file_path: Path):
                 grouped_output_symbols = {group_name: json_output[group_name]}
 
             is_positive_sample = bool(grouped_output_symbols)
-            # [수정] Negative 샘플 판단 로직을 더 명확하게 변경: 현재 그룹의 카테고리 중 하나라도 원본 심볼에 있으면 high confidence로 간주
             is_high_confidence_negative = (not is_positive_sample) and any(
                 cat in original_symbols for cat in source_categories)
 
@@ -131,6 +131,9 @@ def split_single_file(file_path: Path):
             with open(input_save_dir / input_filename, 'w', encoding='utf-8') as f:
                 json.dump(final_input_record, f, indent=2, ensure_ascii=False)
 
+            # [수정] input 파일 생성 시 카운트 증가
+            created_files_count += 1
+
             if is_positive_sample:
                 output_save_dir = SPLIT_OUTPUT_DIR / relative_parent / group_dir_name
                 output_save_dir.mkdir(parents=True, exist_ok=True)
@@ -142,7 +145,12 @@ def split_single_file(file_path: Path):
                 }
                 with open(output_save_dir / output_filename, 'w', encoding='utf-8') as f:
                     json.dump(final_output_record, f, indent=2, ensure_ascii=False)
-        return None
+
+                # [수정] output 파일 생성 시 카운트 증가
+                created_files_count += 1
+
+        # [수정] 성공 시 생성된 파일 수를 반환
+        return created_files_count
     except Exception as e:
         return f"오류: {file_path.name} 처리 중 - {e}"
 
@@ -162,15 +170,24 @@ def main():
         results = list(
             tqdm(pool.imap_unordered(split_single_file, validated_files), total=len(validated_files), desc="파일 분할 중"))
 
-    errors = [res for res in results if res is not None]
+    # [수정] 결과를 분석하여 총 생성 파일 수와 오류를 집계합니다.
+    errors = []
+    total_split_files_created = 0
+    for res in results:
+        if isinstance(res, int):
+            total_split_files_created += res
+        elif isinstance(res, str):
+            errors.append(res)
 
     print("\n🎉 2단계 완료!")
     if errors:
         print(f"   - {len(errors)}개의 파일 처리 중 오류가 발생했습니다.")
         for err in errors[:5]:
             print(f"     - {err}")
-    else:
-        print("   - 모든 파일이 성공적으로 분할되었습니다.")
+
+    print(f"   - 모든 파일이 성공적으로 분할되었습니다.")
+    # [수정] 최종 생성된 파일 수를 출력합니다.
+    print(f"   - 총 {total_split_files_created}개의 분할된 파일(inputs/outputs)이 생성되었습니다.")
 
 
 if __name__ == '__main__':

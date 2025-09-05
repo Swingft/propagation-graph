@@ -61,12 +61,17 @@ def main():
     scripts_dir = "scripts"
 
     pipeline_scripts = [
+        # 학습 input의 자원이 될 소스코드 생성
         # [os.path.join(scripts_dir, "generate_swift_code.py")],
+        # 생성된 소스코드 ast 기반 심볼 정보를 추출해 input으로 변환
         # [os.path.join(scripts_dir, "generate_input_from_swift_code.py")],
-        # [os.path.join(scripts_dir, "generate_output_from_input.py")],
-        # [os.path.join(scripts_dir, "verify_outputs.py")],
-        # [os.path.join(scripts_dir, "split_labels_by_category.py")],
-        # [os.path.join(scripts_dir, "create_dataset.py")],
+        # input -> 식별자를 찾을 수 있는 최소한의 그룹 단위로 분할
+        # [os.path.join(scripts_dir, "split_inputs_by_category.py")],
+        # splited inputs -> 제외 대상 식별자 json output 생성 (CoT 포함)
+        # [os.path.join(scripts_dir, "generate_output_from_splited_input.py")],
+        # CoT 생성 했는지 검증 && alpaca dataset create
+        # [os.path.join(scripts_dir, "outputs_verify_and_dataset_create.py")],
+
 
         # 모델 변환 및 평가 단계
         # [os.path.join(scripts_dir, "convert_to_model_coreml.py"), "info"],

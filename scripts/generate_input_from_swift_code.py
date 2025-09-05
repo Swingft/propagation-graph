@@ -7,7 +7,7 @@ from functools import partial
 from typing import List, Dict, Any, Optional
 from tqdm import tqdm
 
-# --- 상수 정의 ---
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 ANALYZER_DIR = PROJECT_ROOT / "SwiftASTAnalyzer"
