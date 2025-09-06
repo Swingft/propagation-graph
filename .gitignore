@@ -17,9 +17,13 @@ llm_training_inputs/
 llm_training_raw_outputs/
 llm_training_data_validated/
 llm_training_data_split/
-swift_obfuscation_dataset.jsonl
+input.jsonl
 scripts/backup_no_split/evaluate_model.py
 scripts/backup_no_split/convert_to_model_coreml.py
+nCr_train/
+z_models/train.jsonl
+z_models/train.zip
+
 
 
 

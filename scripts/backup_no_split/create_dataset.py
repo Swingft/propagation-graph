@@ -9,7 +9,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 SPLIT_DATA_ROOT = PROJECT_ROOT / 'llm_training_data_split'
 SPLIT_INPUT_DIR = SPLIT_DATA_ROOT / 'inputs'
 SPLIT_OUTPUT_DIR = SPLIT_DATA_ROOT / 'outputs'
-ALPACA_DATASET_FILE = PROJECT_ROOT / 'swift_obfuscation_dataset.jsonl'
+ALPACA_DATASET_FILE = PROJECT_ROOT / 'input.jsonl'
 NO_EXCLUSION_OUTPUT = {
     "thinking": "Based on the analysis, no symbols in this context group meet the criteria for obfuscation exclusion.",
     "json_output": {}

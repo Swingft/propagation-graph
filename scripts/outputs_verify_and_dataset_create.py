@@ -2,41 +2,64 @@ import json
 import re
 from pathlib import Path
 from tqdm import tqdm
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
-
+# --- 경로 상수 ---
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
 SPLIT_INPUT_ROOT = PROJECT_ROOT / 'llm_training_data_split' / 'inputs'
 SPLIT_OUTPUT_ROOT = PROJECT_ROOT / 'llm_training_data_split' / 'outputs'
-ALPACA_DATASET_FILE = PROJECT_ROOT / 'swift_obfuscation_dataset.jsonl'
+ALPACA_DATASET_FILE = PROJECT_ROOT / 'input.jsonl'
 NO_EXCLUSION_OUTPUT = {
     "thinking": "Based on the analysis, no symbols in this context group meet the criteria for obfuscation exclusion.",
     "json_output": {}
 }
 
 
-def parse_and_validate_response(raw_response: str) -> Optional[Dict[str, Any]]:
-    """LLM의 원본 응답에서 <thinking>과 JSON을 분리하고 유효성을 검증합니다."""
+def parse_and_validate_response(raw_response: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """
+    LLM의 원본 응답에서 <thinking>과 JSON을 분리하고 유효성을 검증합니다.
+    [개선] 괄호 개수를 세어, 불필요한 추가 데이터가 있어도 첫 번째 유효한 JSON 객체를 정확히 추출합니다.
+    """
     try:
         thinking_match = re.search(r"<thinking>(.*?)</thinking>", raw_response, re.DOTALL)
         thinking_content = thinking_match.group(1).strip() if thinking_match else ""
 
-        json_start_index = raw_response.find('{')
-        json_end_index = raw_response.rfind('}')
+        # <thinking> 블록이 끝난 지점부터 검색 시작
+        search_area = raw_response
+        if thinking_match:
+            search_area = raw_response[thinking_match.end():]
 
-        if json_start_index == -1 or json_end_index == -1:
-            return NO_EXCLUSION_OUTPUT
+        json_start_index = search_area.find('{')
+        if json_start_index == -1:
+            return NO_EXCLUSION_OUTPUT, None  # JSON 시작을 찾을 수 없음
 
-        json_str = raw_response[json_start_index: json_end_index + 1]
-        json_output = json.loads(json_str)  # JSON 유효성 검증
-        return {"thinking": thinking_content, "json_output": json_output}
+        # 여는 괄호와 닫는 괄호의 개수를 세어 정확한 JSON 끝 지점을 찾음
+        open_braces = 0
+        json_end_index = -1
+        for i, char in enumerate(search_area[json_start_index:]):
+            if char == '{':
+                open_braces += 1
+            elif char == '}':
+                open_braces -= 1
 
-    except json.JSONDecodeError:
-        return None  # JSON이 깨진 경우 None 반환
-    except Exception:
-        return None
+            if open_braces == 0:
+                # 괄호의 균형이 맞는 지점을 찾음
+                json_end_index = json_start_index + i + 1
+                break
+
+        if json_end_index == -1:
+            return None, "JSON Error: Unbalanced braces found."
+
+        json_str = search_area[json_start_index:json_end_index]
+        json_output = json.loads(json_str)
+        return {"thinking": thinking_content, "json_output": json_output}, None
+
+    except json.JSONDecodeError as e:
+        return None, f"JSON Decode Error: {e}"
+    except Exception as e:
+        return None, f"An unexpected error occurred during parsing: {e}"
 
 
 def main():
@@ -45,7 +68,7 @@ def main():
         print(f"🚨 오류: 분할된 입력 디렉토리를 찾을 수 없습니다: {SPLIT_INPUT_ROOT}")
         return
 
-    print("🚀 4단계: 분할된 파일들을 최종 Alpaca 데이터셋으로 통합 시작...")
+    print("🚀 최종 Alpaca 데이터셋 통합 시작...")
 
     input_files = sorted(list(SPLIT_INPUT_ROOT.rglob("*.json")))
     if not input_files:
@@ -70,13 +93,16 @@ def main():
                 with open(output_file_path, 'r', encoding='utf-8') as f_out:
                     raw_response = f_out.read()
 
-                parsed = parse_and_validate_response(raw_response)
-                if parsed is None:
-                    skipped_files.append(output_file_path.name)
-                    continue  # JSON 검증 실패 시 건너뛰기
+                parsed, error_message = parse_and_validate_response(raw_response)
+
+                if error_message:
+                    skipped_files.append({
+                        "file": str(output_file_path.relative_to(PROJECT_ROOT)),
+                        "reason": error_message
+                    })
+                    continue
                 output_content = parsed
 
-            # 최종 Alpaca 레코드 구성
             alpaca_record = {
                 "instruction": input_record.get("instruction", ""),
                 "input": json.dumps(input_record.get("input", {}), ensure_ascii=False),
@@ -98,6 +124,12 @@ def main():
     print(f"   - {len(skipped_files)}개의 파일이 깨진 JSON 등의 이유로 건너뛰어졌습니다.")
     print(f"   - 최종 파일: {ALPACA_DATASET_FILE}")
     print("=" * 50)
+
+    if skipped_files:
+        print("\n[참고] 다음 파일들은 파싱에 실패하여 데이터셋에서 제외되었습니다:")
+        for skipped_info in skipped_files:
+            print(f"  - 파일: {skipped_info['file']}")
+            print(f"    이유: {skipped_info['reason']}")
 
 
 if __name__ == "__main__":

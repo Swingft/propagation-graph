@@ -35,7 +35,7 @@ def main():
     """
 
     TARGET_MODEL = "models/gemini-2.5-pro"
-    START_INDEX = 1
+    START_INDEX = 486
     END_INDEX = None
 
     RAW_OUTPUT_ROOT.mkdir(exist_ok=True)

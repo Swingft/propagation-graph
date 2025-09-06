@@ -1,18 +1,14 @@
 import os
 from pathlib import Path
+import shutil
 
 # --------------------------------------------------------------------------
-# [설정] llm_training_raw_outputs 폴더가 이 스크립트 파일의 2단계 상위 폴더에 있다고 가정합니다.
-# 예: /some/path/project/scripts/this_script.py
-#     /some/path/project/llm_training_raw_outputs/
-# 환경에 맞게 이 경로를 수정하세요.
+# [설정] 정리할 대상 폴더를 지정합니다.
 # --------------------------------------------------------------------------
-try:
-    INPUT_ROOT = Path(__file__).resolve().parent.parent / 'llm_training_raw_outputs'
-except NameError:
-    # 대화형 환경(예: Jupyter)에서 실행 시 __file__이 없어 발생하는 오류를 방지합니다.
-    # 이 경우, 현재 작업 디렉토리를 기준으로 경로를 설정합니다.
-    INPUT_ROOT = Path.cwd() / 'llm_training_raw_outputs'
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+# [수정] 새로운 분할된 출력 폴더 경로를 사용합니다.
+TARGET_ROOT = PROJECT_ROOT / 'llm_training_data_split' / 'outputs'
 
 
 def process_and_cleanup_file(file_path: Path):
@@ -45,7 +41,6 @@ def process_and_cleanup_file(file_path: Path):
 
                 # --- 실제 파일 수정 로직 ---
                 # 아래 줄의 주석('#')을 제거하면 파일이 실제로 수정됩니다.
-                # 실행하기 전에 수정 대상 파일이 맞는지 반드시 확인하세요.
                 # file_path.write_text(new_content, encoding='utf-8')
 
                 print(f"    -> (수정 기능은 현재 주석 처리되어 있습니다)")
@@ -59,8 +54,7 @@ def process_and_cleanup_file(file_path: Path):
 
             # --- 실제 파일 삭제 로직 ---
             # 아래 줄의 주석('#')을 제거하면 파일이 실제로 삭제됩니다.
-            # 실행하기 전에 삭제 대상 파일이 맞는지 반드시 확인하세요.
-            # file_path.unlink()
+            file_path.unlink()
 
             print(f"    -> (삭제 기능은 현재 주석 처리되어 있습니다)")
             return 'to_delete'
@@ -74,48 +68,40 @@ def main():
     """
     입력 디렉토리에서 CoT가 없거나 형식이 잘못된 파일을 찾아 정리합니다.
     """
-    print(f"🔍 정리 대상 디렉토리: {INPUT_ROOT}")
-    if not INPUT_ROOT.is_dir():
-        print(f"🚨 치명적 오류: 디렉토리가 없습니다: {INPUT_ROOT}")
+    print(f"🔍 정리 대상 디렉토리: {TARGET_ROOT}")
+    if not TARGET_ROOT.is_dir():
+        print(f"🚨 치명적 오류: 디렉토리가 없습니다: {TARGET_ROOT}")
         return
 
     print("\nℹ️ 정보: CoT('<thinking>')가 없는 파일은 삭제 대상으로,")
     print("   \"'''xml\"로 시작하는 파일은 수정 대상으로 분류합니다.")
     print("   실제 파일 수정/삭제는 코드에서 주석 처리되어 있으니 안심하세요.")
-    print("   변경을 원하시면 스크립트의 `file_path.write_text()` 또는 `file_path.unlink()` 부분 주석을 직접 해제해야 합니다.")
 
-    files_to_process = sorted(list(INPUT_ROOT.rglob("*.txt")))
+    # [수정] .txt 대신 .json 파일을 찾도록 변경
+    files_to_process = sorted(list(TARGET_ROOT.rglob("output_*.json")))
     if not files_to_process:
-        print("\n🤷 처리할 .txt 파일을 찾지 못했습니다.")
+        print("\n🤷 처리할 output 파일을 찾지 못했습니다.")
         return
 
-    print(f"\n✨ 총 {len(files_to_process)}개의 .txt 파일을 검사합니다.")
+    print(f"\n✨ 총 {len(files_to_process)}개의 파일을 검사합니다.")
     print("-" * 50)
 
-    modified_count = 0
-    to_delete_count = 0
-    skipped_count = 0
-    error_count = 0
+    counts = {'modified': 0, 'to_delete': 0, 'skipped_ok': 0, 'skipped_empty': 0, 'error': 0}
 
     for file_path in files_to_process:
         result = process_and_cleanup_file(file_path)
-        if result == 'modified':
-            modified_count += 1
-        elif result == 'to_delete':
-            to_delete_count += 1
-        elif result.startswith('skipped'):
-            skipped_count += 1
-        else: # 'error'
-            error_count += 1
+        if result in counts:
+            counts[result] += 1
 
     print("-" * 50)
     print("🎉 모든 작업 완료!")
     print("📊 결과 요약:")
-    print(f"  - 📝 수정 대상 파일 발견 (실제 수정 안 됨): {modified_count}개")
-    print(f"  - 🎯 삭제 대상 파일 발견 (실제 삭제 안 됨): {to_delete_count}개")
-    print(f"  - ✅ 정상/패스 파일 (CoT 포함 또는 빈 파일): {skipped_count}개")
-    if error_count > 0:
-        print(f"  - ❌ 오류 발생: {error_count}개")
+    print(f"  - 📝 수정 대상 파일 발견 (실제 수정 안 됨): {counts['modified']}개")
+    print(f"  - 🎯 삭제 대상 파일 발견 (실제 삭제 안 됨): {counts['to_delete']}개")
+    print(f"  - ✅ 정상/패스 파일: {counts['skipped_ok']}개")
+    print(f"  - 텅 빈 파일: {counts['skipped_empty']}개")
+    if counts['error'] > 0:
+        print(f"  - ❌ 오류 발생: {counts['error']}개")
 
 
 if __name__ == "__main__":
